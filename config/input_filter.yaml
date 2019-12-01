@@ -1,5 +1,5 @@
 - RandomSamplingDataPointsFilter:
-    prob: 0.2
+    prob: 0.1
 - BoundingBoxDataPointsFilter:
     xMin: -15
     xMax: 0
@@ -10,7 +10,7 @@
     removeInside: 1
 - SurfaceNormalDataPointsFilter:
     knn: 5
-    epsilon: 3.33
+    epsilon: 0
     keepNormals: 1
     keepDensities: 1
 - MaxDensityDataPointsFilter:

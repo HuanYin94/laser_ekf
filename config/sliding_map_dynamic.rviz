@@ -19,7 +19,7 @@ Panels:
         - /PointCloud22
         - /PointCloud23
       Splitter Ratio: 0.5
-    Tree Height: 359
+    Tree Height: 747
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -236,7 +236,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 5
+      Size (Pixels): 4
       Size (m): 0.1
       Style: Points
       Topic: /sliding_map
@@ -298,22 +298,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 243.393
+      Distance: 199.202
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 55.1923
-        Y: -16.1731
-        Z: -142.343
+        X: 101.258
+        Y: -1.10278
+        Z: -117.723
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.3998
+      Pitch: 1.0748
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.05588
+      Yaw: 3.10588
     Saved: ~
 Window Geometry:
   Displays:
@@ -331,5 +331,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 939
-  X: 961
+  X: 951
   Y: 14
