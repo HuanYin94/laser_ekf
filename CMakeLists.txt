@@ -33,3 +33,15 @@ target_link_libraries(sliding_mapper_double
 ${catkin_LIBRARIES}
 )
 
+add_executable(odom_zh src/odom_zh.cpp)
+target_link_libraries(odom_zh
+${catkin_LIBRARIES}
+)
+
+add_executable(odom_mine src/odom_mine.cpp)
+target_link_libraries(odom_mine
+${catkin_LIBRARIES}
+)
+
+
+

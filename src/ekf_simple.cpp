@@ -280,6 +280,7 @@ void ekf::sysInit()
     cout<<"System Initial!"<<endl;
 
 //    vehicle_pose << mag_pose.point.x, mag_pose.point.y, this->angleNorm(mag_pose.point.z);
+    /// INIT POSE FOR THIS TURN
     vehicle_pose << 0,0,0;
 
     // vis pub

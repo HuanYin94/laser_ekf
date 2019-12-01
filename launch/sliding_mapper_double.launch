@@ -4,7 +4,7 @@
 
 	<param name="use_sim_time" value="true" />
 
-	<!--node pkg="laser_ekf" type="odom_pub" name="odom_pub"/-->
+	<node pkg="laser_ekf" type="odom_zh" name="odom_zh"/>
 
 	<!--node pkg="laser_ekf" type="merge_laser" name="merge_laser"/-->
 
@@ -14,10 +14,12 @@
 
 
 	<!--New sensor set, New calibration needed.-->
-	<!--node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="-6.9177 -0.0397 0 0 0 0.9998 0.0174 base_footprint laser2 10" /-->
+
+	<!--node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1.95685 -2.19474 -0.1 -0.017 -0.0104 -0.521 -0.853 laser2 laser1 50" />
+    <node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="7.5012 1.4813 0.962 0 0 -0.3625 0.9320 base_footprint laser2 50" /-->
+
     <node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="7.5012 -1.4813 -0.962 0 0 -0.3625 0.9320 base_footprint laser2 50" />
 	<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="-2.05685 1.99474 0 0.0000 0.0000 0.7880 0.6157 laser2 laser1 100" />
-
 
 	
 
