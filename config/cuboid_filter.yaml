@@ -1,0 +1,6 @@
+- VoxelGridDataPointsFilter:
+    vSizeX: 0.3
+    vSizeY: 0.3
+    vSizeZ: 0.3
+    useCentroid: 1
+

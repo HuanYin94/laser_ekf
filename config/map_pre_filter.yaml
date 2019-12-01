@@ -1,0 +1,6 @@
+- VoxelGridDataPointsFilter:
+    vSizeX: 0.5
+    vSizeY: 0.5
+    vSizeZ: 0.5
+    useCentroid: 1
+    averageExistingDescriptors: 1
