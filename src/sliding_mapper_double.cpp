@@ -511,7 +511,9 @@ void Mapper::processCloud(unique_ptr<DP> newPointCloud, const std::string& scann
 //    ROS_INFO("Processing new point cloud");
     {
         // Apply filters to incoming cloud, in scanner coordinates
+        timer timeProcess_0;
         inputFilters.apply(*newPointCloud);
+        cout<<"filter:  "<<timeProcess_0.elapsed()<<endl;
     }
 
 
@@ -597,7 +599,11 @@ void Mapper::processCloud(unique_ptr<DP> newPointCloud, const std::string& scann
         PM::TransformationParameters TSensorReckon = TFootPrintToSensor * TOdomRelative * TSensorToFootPrint;
         PM::TransformationParameters TSensorToMapReckon = lastTSensorToMap * TSensorReckon;
 
+
+        timer timeProcess_1;
         TSensorToMap = icp(*newPointCloud, TSensorToMapReckon);
+        cout<<"icp: "<<timeProcess_1.elapsed()<<endl;
+
         ROS_DEBUG_STREAM("Ticp:\n" << TSensorToMap);
 
         TSensorRelative = lastTSensorToMap.inverse() * TSensorToMap;
@@ -645,24 +651,25 @@ void Mapper::processCloud(unique_ptr<DP> newPointCloud, const std::string& scann
         TFootPrintToPlaneOdom(1,0) = sin(yaw);
         TFootPrintToPlaneOdom(1,1) = cos(yaw);
 
+        timer timeProcess_2;
 
-        dynamicProbabilityUpdate(newPointCloudInSensorFrame);
-        blindSpotCloudUpdate(newPointCloudInSensorFrame, TSensorRelative, true);
-        // // blind augment cloud
-        if(augmentPointCloud)
-            delete augmentPointCloud;
-        augmentPointCloud = new DP(blindSpotPointCloud->features, blindSpotPointCloud->featureLabels
-                                    ,blindSpotPointCloud->descriptors, blindSpotPointCloud->descriptorLabels);
-        // Transfrom the point cloud to odom frame and apply filter
-        *augmentPointCloud = transformation->compute(*blindSpotPointCloud, TSensorToFootPrint);
-        // apply density based filter on the blind spot cloud
-        verticalCuboidFilter.apply(*augmentPointCloud);
-        groundCloudFilter(augmentPointCloud); // find obstacle in odom frame from blind point cloud
-        // sensor cloud height trim
-        cloudHeightTrim(newPointCloudInbaseFootPrintFrame);
-        verticalCuboidFilter.apply(*newPointCloudInbaseFootPrintFrame);
-        // combine interested blind spot cloud and height filtered sensor cloud
-        augmentPointCloud->concatenate(*newPointCloudInbaseFootPrintFrame);
+//        dynamicProbabilityUpdate(newPointCloudInSensorFrame);
+//        blindSpotCloudUpdate(newPointCloudInSensorFrame, TSensorRelative, true);
+//        // // blind augment cloud
+//        if(augmentPointCloud)
+//            delete augmentPointCloud;
+//        augmentPointCloud = new DP(blindSpotPointCloud->features, blindSpotPointCloud->featureLabels
+//                                    ,blindSpotPointCloud->descriptors, blindSpotPointCloud->descriptorLabels);
+//        // Transfrom the point cloud to odom frame and apply filter
+//        *augmentPointCloud = transformation->compute(*blindSpotPointCloud, TSensorToFootPrint);
+//        // apply density based filter on the blind spot cloud
+//        verticalCuboidFilter.apply(*augmentPointCloud);
+//        groundCloudFilter(augmentPointCloud); // find obstacle in odom frame from blind point cloud
+//        // sensor cloud height trim
+//        cloudHeightTrim(newPointCloudInbaseFootPrintFrame);
+//        verticalCuboidFilter.apply(*newPointCloudInbaseFootPrintFrame);
+//        // combine interested blind spot cloud and height filtered sensor cloud
+//        augmentPointCloud->concatenate(*newPointCloudInbaseFootPrintFrame);
 
 
         PM::TransformationParameters TPlaneOdomToMap = TFootPrintToMap * TFootPrintToPlaneOdom.inverse();
@@ -670,6 +677,7 @@ void Mapper::processCloud(unique_ptr<DP> newPointCloud, const std::string& scann
         Eigen::AngleAxisf PlaneOdomToMapAxisAngle(PlaneOdomToMapRotation);    // RotationMatrix to AxisAngle
         TPlaneOdomToMap.block(0,0,3,3) = PlaneOdomToMapAxisAngle.toRotationMatrix();  // AxisAngle      to RotationMatrix
 
+        cout<<"map: "<<timeProcess_2.elapsed()<<endl;
 
         // Publish tf
         if(publishMapTf == true)

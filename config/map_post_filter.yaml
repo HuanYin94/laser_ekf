@@ -6,7 +6,7 @@
 - OctreeGridDataPointsFilter:
     buildParallel: 1
     maxPointByNode: 1
-    maxSizeByNode: 0.2
+    maxSizeByNode: 0.1
     samplingMethod: 3
 #- VoxelGridDataPointsFilter:
 #    vSizeX: 0.5
