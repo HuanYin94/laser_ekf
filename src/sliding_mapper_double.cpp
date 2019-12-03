@@ -64,9 +64,6 @@ class Mapper
 
     // Publishers
     ros::Publisher mapPub;
-    ros::Publisher mapInSensorPub;
-    ros::Publisher blindSpotCloudPub;
-    ros::Publisher augmentPointCloudPub;
     ros::Publisher sensorOdomPub;
     ros::Publisher footPrintToPlaneOdomPub;
 
@@ -77,13 +74,10 @@ class Mapper
     // libpointmatcher
     PM::DataPointsFilters inputFilters;
     PM::DataPointsFilters mapPostFilters;
-    PM::DataPointsFilters verticalCuboidFilter;
     PM::DataPoints *mapPointCloud;
     PM::DataPoints *mapPointCloudInSensorFrame;
     PM::DataPoints *newPointCloudInSensorFrame;
     PM::DataPoints *newPointCloudInbaseFootPrintFrame;
-    PM::DataPoints *augmentPointCloud;
-    PM::DataPoints *blindSpotPointCloud;
     PM::ICPSequence icp;
     unique_ptr<PM::Transformation> transformation;
 
@@ -116,24 +110,13 @@ class Mapper
 //    string planeFootPrintFrame;
     string vtkFinalMapName; //!< name of the final vtk map
 
-    const double robotMaximalHeight;
-    const double robotChassisHeight;
-
-    const double blindSpotDownlookAngleDetect;
-    const double blindSpotDownlookAngleTrack;
-    const double blindSpotTrackMinTranslate;
-
-    const double heightFilterMin;
-    const double heightFilterMax;
-    const double heightFilterDistRatio;
-
     ofstream outSavePose;
-
 
     // map construction range
     const float sensorMaxRange;
     const float slidingMapMaxRange;
 
+    /// original ethz filtering, yh
     // Parameters for dynamic filtering
     const float priorStatic; //!< ratio. Prior to be static when a new point is added
     const float priorDyn; //!< ratio. Prior to be dynamic when a new point is added
@@ -181,10 +164,6 @@ protected:
     void setMap(DP* newPointCloud);
     DP* updateMap(DP* newPointCloud, const PM::TransformationParameters Ticp, bool updateExisting);
     void waitForMapBuildingCompleted();
-    void dynamicProbabilityUpdate(DP* newPointCloud);
-    void blindSpotCloudUpdate(DP* newPointCloud, const PM::TransformationParameters TSensorRelative, bool initialized);
-    void groundCloudFilter(DP* newPointCloud);
-    void cloudHeightTrim(DP* newPointCloud);
     void publishLoop(double publishPeriod);
     void publishTransform();
 };
@@ -196,8 +175,6 @@ Mapper::Mapper(ros::NodeHandle& n, ros::NodeHandle& pn):
     mapPointCloudInSensorFrame(0),
     newPointCloudInSensorFrame(0),
     newPointCloudInbaseFootPrintFrame(0),
-    blindSpotPointCloud(0),
-    augmentPointCloud(0),
     transformation(PM::get().REG(Transformation).create("RigidTransformation")),
     #if BOOST_VERSION >= 104100
     mapBuildingInProgress(false),
@@ -218,14 +195,6 @@ Mapper::Mapper(ros::NodeHandle& n, ros::NodeHandle& pn):
     baseFootPrintFrame(getParam<string>("base_footprint_frame", "base_footprint")),
 
     vtkFinalMapName(getParam<string>("vtkFinalMapName", "finalMap.vtk")),
-    robotMaximalHeight(getParam<double>("robotMaximalHeight", 1.5)),
-    robotChassisHeight(getParam<double>("robotChassisHeight", 0.1)),
-    blindSpotDownlookAngleDetect(getParam<double>("blindSpotDownlookAngleDetect", 14.5)),
-    blindSpotDownlookAngleTrack(getParam<double>("blindSpotDownlookAngleTrack", 15.5)),
-    blindSpotTrackMinTranslate(getParam<double>("blindSpotTrackMinTranslate", 0.1)),
-    heightFilterMin(getParam<double>("heightFilterMin", 0.1)),
-    heightFilterMax(getParam<double>("heightFilterMax", 0.5)),
-    heightFilterDistRatio(getParam<double>("heightFilterDistRatio", 0.005)),
     priorStatic(getParam<double>("priorStatic", 0.5)),
     priorDyn(getParam<double>("priorDyn", 0.5)),
     maxAngle(getParam<double>("maxAngle", 0.02)),
@@ -314,23 +283,6 @@ Mapper::Mapper(ros::NodeHandle& n, ros::NodeHandle& pn):
         ROS_INFO_STREAM("No map post-filters config file given, not using these filters");
     }
 
-    if (ros::param::get("~verticalCuboidFilterConfig", configFileName))
-    {
-        ifstream ifs(configFileName.c_str());
-        if (ifs.good())
-        {
-            verticalCuboidFilter = PM::DataPointsFilters(ifs);
-        }
-        else
-        {
-            ROS_ERROR_STREAM("Cannot load verticalCuboidFilter config from YAML file " << configFileName);
-        }
-    }
-    else
-    {
-        ROS_INFO_STREAM("No verticalCuboidFilter config file given, not using these filters");
-    }
-
     // topics and services initialization
     if (getParam<bool>("subscribe_odom", true))
         odomSub = n.subscribe("odom_in", 1, &Mapper::gotOdom, this);
@@ -345,12 +297,8 @@ Mapper::Mapper(ros::NodeHandle& n, ros::NodeHandle& pn):
     }
 
     mapPub = n.advertise<sensor_msgs::PointCloud2>("sliding_map", 1, true);
-    mapInSensorPub = n.advertise<sensor_msgs::PointCloud2>("sliding_map_sensorFrame", 1, true);
-    blindSpotCloudPub = n.advertise<sensor_msgs::PointCloud2>("blindSpotCloud", 1, true);
-    augmentPointCloudPub = n.advertise<sensor_msgs::PointCloud2>("augmentPointCloud", 1, true);
     sensorOdomPub = n.advertise<nav_msgs::Odometry>("laser_odom_3d", 1, true);
     footPrintToPlaneOdomPub = n.advertise<nav_msgs::Odometry>("laser_odom_2d", 1, true);
-
 
     // refreshing tf transform thread
     publishThread = boost::thread(boost::bind(&Mapper::publishLoop, this, tfRefreshPeriod));
@@ -471,10 +419,6 @@ void Mapper::processCloud(unique_ptr<DP> newPointCloud, const std::string& scann
 
     // if the future has completed, use the new map
     processNewMapIfAvailable();
-//    cerr << "received new map" << endl;
-
-    // IMPORTANT:  We need to receive the point clouds in local coordinates (scanner or robot)
-    timer tProcess;
 
     // Convert point cloud
     const size_t goodCount(newPointCloud->features.cols());
@@ -570,8 +514,6 @@ void Mapper::processCloud(unique_ptr<DP> newPointCloud, const std::string& scann
         publishLock.unlock();
 
         PM::TransformationParameters TIdentity = PM::TransformationParameters::Identity(dimp1, dimp1);
-        // initialize blind spot cloud
-        blindSpotCloudUpdate(newPointCloudInSensorFrame, TIdentity, false);
 
         // Initialize the map if empty
         ROS_INFO_STREAM("Creating an initial map");
@@ -653,25 +595,6 @@ void Mapper::processCloud(unique_ptr<DP> newPointCloud, const std::string& scann
 
         timer timeProcess_2;
 
-//        dynamicProbabilityUpdate(newPointCloudInSensorFrame);
-//        blindSpotCloudUpdate(newPointCloudInSensorFrame, TSensorRelative, true);
-//        // // blind augment cloud
-//        if(augmentPointCloud)
-//            delete augmentPointCloud;
-//        augmentPointCloud = new DP(blindSpotPointCloud->features, blindSpotPointCloud->featureLabels
-//                                    ,blindSpotPointCloud->descriptors, blindSpotPointCloud->descriptorLabels);
-//        // Transfrom the point cloud to odom frame and apply filter
-//        *augmentPointCloud = transformation->compute(*blindSpotPointCloud, TSensorToFootPrint);
-//        // apply density based filter on the blind spot cloud
-//        verticalCuboidFilter.apply(*augmentPointCloud);
-//        groundCloudFilter(augmentPointCloud); // find obstacle in odom frame from blind point cloud
-//        // sensor cloud height trim
-//        cloudHeightTrim(newPointCloudInbaseFootPrintFrame);
-//        verticalCuboidFilter.apply(*newPointCloudInbaseFootPrintFrame);
-//        // combine interested blind spot cloud and height filtered sensor cloud
-//        augmentPointCloud->concatenate(*newPointCloudInbaseFootPrintFrame);
-
-
         PM::TransformationParameters TPlaneOdomToMap = TFootPrintToMap * TFootPrintToPlaneOdom.inverse();
         Eigen::Matrix3f PlaneOdomToMapRotation = TPlaneOdomToMap.block(0,0,3,3);
         Eigen::AngleAxisf PlaneOdomToMapAxisAngle(PlaneOdomToMapRotation);    // RotationMatrix to AxisAngle
@@ -682,18 +605,8 @@ void Mapper::processCloud(unique_ptr<DP> newPointCloud, const std::string& scann
         // Publish tf
         if(publishMapTf == true)
         {
-//            tfBroadcaster.sendTransform(PointMatcher_ros::eigenMatrixToStampedTransform<float>(TFootPrintToMap, mapFrame, baseFootPrintFrame, stamp));
-//            cout<<TPlaneOdomToMap<<endl;
             tfBroadcaster.sendTransform(PointMatcher_ros::eigenMatrixToStampedTransform<float>(TPlaneOdomToMap, mapFrame, planeOdomFrame, stamp));
             tfBroadcaster.sendTransform(PointMatcher_ros::eigenMatrixToStampedTransform<float>(TFootPrintToPlaneOdom, planeOdomFrame, baseFootPrintFrame, stamp));
-
-//                outSavePose.open("/home/yh/sliding.txt", ios::out|ios::ate|ios::app);
-//                outSavePose << stamp << "    "
-//                            << TFootPrintToMap(0,3) << "    "
-//                        << TFootPrintToMap(1,3)<< "   "
-//                        << atan2(TFootPrintToMap(1,0), TFootPrintToMap(0,0)) <<endl;
-//                outSavePose.close();
-
         }
         publishLock.unlock();
         processingNewCloud = false;
@@ -718,10 +631,6 @@ void Mapper::processCloud(unique_ptr<DP> newPointCloud, const std::string& scann
         // Publish odom to map (map is initialized on baseFootPrintFrame)
         if (footPrintToPlaneOdomPub.getNumSubscribers())
             footPrintToPlaneOdomPub.publish(footPrintToPlaneOdomMsg);
-
-        // replace for zhenhua project
-//        if (footPrintToPlaneOdomPub.getNumSubscribers())
-//            footPrintToPlaneOdomPub.publish(footPrintToMapMsg);
 
         // check if news points should be added to the map
         if (
@@ -753,15 +662,6 @@ void Mapper::processCloud(unique_ptr<DP> newPointCloud, const std::string& scann
         ROS_ERROR_STREAM("ICP failed to converge: " << error.what());
         return;
     }
-
-    if (blindSpotCloudPub.getNumSubscribers())
-        blindSpotCloudPub.publish(PointMatcher_ros::pointMatcherCloudToRosMsg<float>(*blindSpotPointCloud, scannerFrame, stamp));
-
-    if (augmentPointCloudPub.getNumSubscribers())
-        augmentPointCloudPub.publish(PointMatcher_ros::pointMatcherCloudToRosMsg<float>(*augmentPointCloud, baseFootPrintFrame, stamp));
-
-    if (mapInSensorPub.getNumSubscribers())
-        mapInSensorPub.publish(PointMatcher_ros::pointMatcherCloudToRosMsg<float>(*mapPointCloudInSensorFrame, scannerFrame, stamp));
 
     lastPoinCloudTime   = stamp;
     lastTFootPrintToMap = TFootPrintToMap;
@@ -797,455 +697,8 @@ void Mapper::setMap(DP* newPointCloud)
        mapPub.publish(PointMatcher_ros::pointMatcherCloudToRosMsg<float>(*mapPointCloud, mapFrame, mapCreationTime));
 }
 
-void Mapper::dynamicProbabilityUpdate(DP* newPointCloud)
-{
-    const int newPointsCount(newPointCloud->features.cols());
-    const int mapPointsCount(mapPointCloud->features.cols());
-
-    // Build a range image of the reading point cloud (Senor Frame)
-    PM::Matrix radius_newPts = newPointCloud->features.topRows(3).colwise().norm();
-    PM::Matrix angles_newPts(2, newPointsCount); // 0=inclination, 1=azimuth
-    // initializeing angular kd tree of new point cloud
-    for(int i=0; i<newPointsCount; i++)
-    {
-        const float ratio = newPointCloud->features(2,i)/radius_newPts(0,i);
-        angles_newPts(0,i) = acos(ratio);
-        angles_newPts(1,i) = atan2(newPointCloud->features(1,i), newPointCloud->features(0,i));
-    }
-    std::shared_ptr<NNS> featureNNS;
-    featureNNS.reset(NNS::create(angles_newPts));
-
-    PM::Matrix radius_mapPts = mapPointCloudInSensorFrame->features.topRows(3).colwise().norm();
-    PM::Matrix angles_mapPts(2, mapPointsCount); // 0=inclination, 1=azimuth
-    // No atan in Eigen, so we are for to loop through it...
-    for(int i=0; i<mapPointsCount; i++)
-    {
-        const float ratio = mapPointCloudInSensorFrame->features(2,i)/radius_mapPts(0,i);
-        angles_mapPts(0,i) = acos(ratio);
-        angles_mapPts(1,i) = atan2(mapPointCloudInSensorFrame->features(1,i), mapPointCloudInSensorFrame->features(0,i));
-    }
-    // Look for NN in spherical coordinates
-    Matches::Dists dists(1,mapPointsCount);
-    Matches::Ids   ids(1,mapPointsCount);
-
-    featureNNS->knn(angles_mapPts, ids, dists, 1, 0, NNS::ALLOW_SELF_MATCH, maxAngle);
-
-    DP::View viewOnnormals_Map        = mapPointCloudInSensorFrame->getDescriptorViewByName("normals");
-    DP::View viewOnProbabilityStatic  = mapPointCloudInSensorFrame->getDescriptorViewByName("probabilityStatic");
-    DP::View viewOnProbabilityDynamic = mapPointCloudInSensorFrame->getDescriptorViewByName("probabilityDynamic");
-    DP::View viewOnDynamicRatio       = mapPointCloudInSensorFrame->getDescriptorViewByName("dynamic_ratio");
-
-    for(int i=0; i < mapPointsCount; i++)
-    {
-        if(dists(i) != numeric_limits<float>::infinity())
-        {
-            // in local coordinates
-            const Eigen::Vector3f newPt   = newPointCloud->features.col(ids(0,i)).head(3);
-            const Eigen::Vector3f mapPt   = mapPointCloudInSensorFrame->features.col(i).head(3);
-            const Eigen::Vector3f mapPt_n = mapPt.normalized();
-            const float delta = (newPt - mapPt).norm();
-            const float d_max = eps_a * newPt.norm();
-
-            const Eigen::Vector3f normal_map = viewOnnormals_Map.col(i);
-
-            // Weight for dynamic elements
-            const float w_v  = eps + (1 - eps)*fabs(normal_map.dot(mapPt_n));
-            //const float w_d1 = 1 + eps - acos(newPt.normalized().dot(mapPt_n))/maxAngle;
-            const float w_d1 = eps + (1 - eps)*(sqrt(dists(i))/maxAngle);
-
-
-            const float offset = delta - eps_d;
-            float w_d2 = 1;
-            if(delta < eps_d || mapPt.norm() > newPt.norm())
-            {
-                w_d2 = eps;
-            }
-            else
-            {
-                if (offset < d_max)
-                {
-                    w_d2 = eps + (1 - eps )*offset/d_max;
-                }
-            }
-
-            float w_p2 = eps;
-            if(delta < eps_d)
-            {
-                w_p2 = 1;
-            }
-            else
-            {
-                if(offset < d_max)
-                {
-                    w_p2 = eps + (1 - eps)*(1 - offset/d_max);
-                }
-            }
-
-            // We don't update point behind the reading
-            if((newPt.norm() + eps_d + d_max) >= mapPt.norm())
-            {
-
-                const float lastDyn = viewOnProbabilityDynamic(0,i);
-                const float lastStatic = viewOnProbabilityStatic(0, i);
-
-                const float c1 = (1 - (w_v*(1 - w_d1)));
-                const float c2 = w_v*(1 - w_d1);
-
-                // FIXME: this is a parameter
-                const float maxDyn = 0.9; // ICRA 14
-// 				const float maxDyn = 0.98; // ISER 14
-
-                //Lock dynamic point to stay dynamic under a threshold
-                if(lastDyn < maxDyn)
-                {
-                    viewOnProbabilityDynamic(0,i) = c1*lastDyn + c2*w_d2*((1 - alpha)*lastStatic + beta*lastDyn);
-                    viewOnProbabilityStatic(0, i) = c1*lastStatic + c2*w_p2*(alpha*lastStatic + (1 - beta)*lastDyn);
-                }
-                else
-                {
-                    viewOnProbabilityStatic(0,i) = eps;
-                    viewOnProbabilityDynamic(0,i) = 1-eps;
-                }
-
-
-                // normalization
-                const float sumZ = viewOnProbabilityDynamic(0,i) + viewOnProbabilityStatic(0, i);
-                assert(sumZ >= eps);
-
-                viewOnProbabilityDynamic(0,i) /= sumZ;
-
-                viewOnProbabilityStatic(0,i) /= sumZ;
-
-                //viewOnDynamicRatio(0,mapId) =viewOnProbabilityDynamic(0, mapId);
-                viewOnDynamicRatio(0,i) = w_d2;
-
-            }
-        }
-    }
-    mapPointCloud->addDescriptor("probabilityDynamic", viewOnProbabilityDynamic);
-    mapPointCloud->addDescriptor("probabilityStatic",viewOnProbabilityStatic);
-    mapPointCloud->addDescriptor("dynamic_ratio", viewOnDynamicRatio);
-}
-
-void Mapper::blindSpotCloudUpdate(DP* newPointCloud, const PM::TransformationParameters TSensorRelative, bool initialized)
-{
-    const double trackingTangent   = tan(- blindSpotDownlookAngleTrack*3.1415926/180) ;
-    const double detectingTrangent = tan(- blindSpotDownlookAngleDetect*3.1415926/180);
-
-    int cloudCount = 0;
-    if(initialized)
-    {
-        DP *lastCloud = new DP(blindSpotPointCloud->features,blindSpotPointCloud->featureLabels,
-                         blindSpotPointCloud->descriptors, blindSpotPointCloud->descriptorLabels);
-        // Transform the last point cloud in new point cloud coordinates, sensor frame
-        *lastCloud = transformation->compute( *lastCloud, TSensorRelative.inverse() );
-
-        //tracking last blind Spot cloud
-        const int lastCloudCount(lastCloud->features.cols());
-        for(int i = 0; i<lastCloudCount; i++)
-        {
-            const Eigen::Vector2f pt_xy = lastCloud->features.col(i).head(2);
-            float pt_z = lastCloud->features(2,i);
-            if(pt_z < 0)
-            {
-                float trackingMaxNorm = -blindSpotTrackMinTranslate + pt_z/trackingTangent;
-                if(pt_xy.norm() < trackingMaxNorm)
-                {
-                    blindSpotPointCloud->setColFrom(cloudCount, *lastCloud, i);
-                    cloudCount ++;
-                }
-            }
-        }
-        delete lastCloud;
-        if(cloudCount>0)
-            blindSpotPointCloud->conservativeResize(cloudCount);
-    }
-
-    // add new scan
-    if(!initialized)
-        blindSpotPointCloud = new DP(newPointCloud->features,newPointCloud->featureLabels,
-                               newPointCloud->descriptors, newPointCloud->descriptorLabels);
-    else
-        blindSpotPointCloud->concatenate(*newPointCloud);
-    const int newCloudCount(newPointCloud->features.cols());
-    for(int i = 0; i<newCloudCount; i++)
-    {
-        const Eigen::Vector2f pt_xy = newPointCloud->features.col(i).head(2);
-        float pt_z = newPointCloud->features(2,i);
-        if(pt_z < 0)
-        {
-            float pt_tangentVertical = pt_z/pt_xy.norm();
-            if(pt_tangentVertical < detectingTrangent)
-            {
-                blindSpotPointCloud->setColFrom(cloudCount, *newPointCloud, i);
-                cloudCount ++;
-            }
-        }
-    }
-    if(cloudCount>0)
-        blindSpotPointCloud->conservativeResize(cloudCount);
-}
-
-void Mapper::groundCloudFilter(DP* newPointCloud)
-{
-    DP *tempCloud = new DP(newPointCloud->features, newPointCloud->featureLabels,
-                         newPointCloud->descriptors, newPointCloud->descriptorLabels);
-    int tempCloudCount = tempCloud->features.cols();
-
-    float coff_a = 0, coff_b = 0, coff_c = 0, coff_d = 0;
-    // 1. find the ground plane by fitting points cloud
-    /*
-    // //try to determine the ground plane by fitting point cloud
-        // firstly, calculate the centriod point of cloud
-    Eigen::Vector3f centriodPt(0.0f, 0.0f, 0.0f);
-    for(int i = 0; i<cloudCount; i++)
-    {
-        Eigen::Vector3f pt = tempCloud->features.col(i).head(3);
-        centriodPt = centriodPt + pt;
-    }
-    centriodPt = centriodPt/cloudCount;
-        // secondly, recalculate cloud by centering in centriod point
-    Eigen::MatrixXf ptCloudCenter(3, cloudCount);
-    Eigen::MatrixXf ptCloudPlane(3, cloudCount);
-    float xx = 0, xy = 0, xz = 0, yy = 0, yz =0 , zz = 0;
-    int planeCount = 0;
-    for(int i = 0; i<cloudCount; i++)
-    {
-        Eigen::Vector2f dpt = tempCloud->features.col(i).head(2);
-        Eigen::Vector3f pt = tempCloud->features.col(i).head(3);
-        pt = pt - centriodPt;
-        ptCloudCenter.col(i) = pt;
-        // only use the near points for plane fit
-        if( dpt.norm() <  groundPlaneFitRadius )
-        {
-            xx += pt[0] * pt[0];
-            xy += pt[0] * pt[1];
-            xz += pt[0] * pt[2];
-            yy += pt[1] * pt[1];
-            yz += pt[1] * pt[2];
-            zz += pt[2] * pt[2];
-
-            ptCloudPlane.col(planeCount) = pt;
-            planeCount ++;
-        }
-    }
-        // thirdly, fit the plane by selected points
-    float stdev = 2*groundPlaneFitMaxStdev;
-    if(planeCount > groundPlaneFitLeastPoints)
-    {
-        float det_z = xx*yy - xy*xy;
-        coff_a = (yz*xy - xz*yy) / det_z;
-        coff_b = (xz*xy - yz*xx) / det_z;
-        coff_c = 1;
-        //coff_d = 0;
-        // calculate standard deviation
-        for(int i = 0; i<planeCount; i++)
-        {
-            Eigen::Vector3f pt = ptCloudPlane.col(i);
-            float errorPt = coff_a*pt[0] + coff_b*pt[1] + coff_c*pt[2];
-            stdev += errorPt*errorPt;
-        }
-        stdev = sqrt(stdev/planeCount);
-    }
-    */
-
-    //2. find the ground plane by tranformation information
-    coff_a = 0;
-    coff_b = 0;
-    coff_c = 1;
-
-    Eigen::MatrixXf tempCloudToPlaneDist(1,tempCloudCount);
-    Eigen::MatrixXf planarPts(2,tempCloudCount);
-    for(int i=0;i<tempCloudCount;i++)
-    {
-        Eigen::Vector3f pt = tempCloud->features.col(i).head(3);
-        tempCloudToPlaneDist(0,i) = coff_a*pt[0] + coff_b*pt[1] + coff_c*pt[2];
-        Eigen::Vector2f ppt = tempCloud->features.col(i).head(2);
-        planarPts.col(i) =ppt;
-    }
-
-    NNS* knnSearch = NNS::createKDTreeLinearHeap(planarPts);
-    const int knn = 8;
-    Eigen::MatrixXi indices(knn, tempCloudCount);
-    Eigen::MatrixXf dists2(knn, tempCloudCount);
-    knnSearch->knn(planarPts, indices, dists2, knn, 0, 0);
-
-    int unevenPointCount = 0;
-    Eigen::MatrixXi unevenFlag(1,tempCloudCount);
-    unevenFlag.setZero(1,tempCloudCount);
-    for(int i=0; i<tempCloudCount; i++)
-    {
-        if(unevenFlag(0,i)<1)
-        {
-            float distToPlane = tempCloudToPlaneDist(0,i);
-            for(int k=0; k<knn; k++)
-            {
-                float distOfNN = tempCloudToPlaneDist(0,indices(k,i));
-                float diffDist = fabs (distToPlane - distOfNN) ;
-
-                if(diffDist > robotChassisHeight)
-                {
-                    newPointCloud->setColFrom(unevenPointCount, *tempCloud, i);
-                    unevenFlag(0,i) = 1;
-                    unevenFlag(0,indices(k,i)) = 1;
-                    unevenPointCount ++;
-                    break;
-                }
-            }
-        }
-    }
-    newPointCloud->conservativeResize(unevenPointCount);
-
-    delete tempCloud;
-    delete knnSearch;
-    // candidate process
-/*
-    float gridResolution = 0.1;
-    Eigen::MatrixXf gridCloudMeanX(100,100);
-    gridCloudMeanX.setZero(100,100);
-    Eigen::MatrixXf gridCloudMeanY(100,100);
-    gridCloudMeanY.setZero(100,100);
-    Eigen::MatrixXf gridCloudMeanZ(100,100);
-    gridCloudMeanZ.setZero(100,100);
-
-    Eigen::MatrixXi gridCloudCount(100, 100);
-    gridCloudCount.setZero(100,100);
-    for(int i = 0; i<cloudCount; i++)
-    {
-        Eigen::Vector3f pt = tempCloud->features.col(i).head(3);
-        float pt_x = pt[0];
-        float pt_y = pt[1];
-        float pt_z = pt[2];
-        if(fabs(pt_x)<5 && fabs(pt_y)<5)
-        {
-          int id_x=floor ( (pt_x+5)/gridResolution );
-          int id_y=floor ( (pt_y+5)/gridResolution );
-
-          gridCloudMeanX(id_x,id_y) += pt_x;
-          gridCloudMeanY(id_x,id_y) += pt_y;
-          gridCloudMeanZ(id_x,id_y) += pt_z;
-          gridCloudCount(id_x,id_y) +=1;
-        }
-    }
-
-
-    //calculate the mean of the points
-    for(int i = 0; i<100; i++)
-    {
-        for(int j = 0; j<100; j++)
-        {
-            if(gridCloudCount(i,j)>0)
-            {
-                gridCloudMeanX(i,j)/gridCloudCount(i,j);
-                gridCloudMeanY(i,j)/gridCloudCount(i,j);
-                gridCloudMeanZ(i,j)/gridCloudCount(i,j);
-            }
-        }
-    }
-
-    //calculate the distance of mean to the plane
-    Eigen::MatrixXf gridCloudDistance(100,100);
-    gridCloudDistance.setZero(100,100);
-    for(int i = 0; i<100; i++)
-    {
-        for(int j = 0; j<100; j++)
-        {
-            if(gridCloudCount(i,j)>0)
-            {
-                float pt_x = gridCloudMeanX(i,j);
-                float pt_y = gridCloudMeanY(i,j);
-                float pt_z = gridCloudMeanZ(i,j);
-
-                gridCloudDistance(i,j) = (coff_a*pt_x + coff_b*pt_y + coff_c*pt_z)/denominator;
-            }
-        }
-    }
-
-
-    //calculate the mean of the points
-    int unevenGridCount = 0;
-    for(int i = 0; i<100; i++)
-    {
-        for(int j = 0; j<100; j++)
-        {
-            bool gridEven = true;
-            float distance = gridCloudDistance(i,j);
-            if(gridCloudCount(i,j)>0)
-            {
-                for(int m=-1; m<2 ; m++)
-                {
-                    for(int n =-1;n<2;n++)
-                    {
-                        int idx = i+m;
-                        int idy = j+n;
-                        if(idx>=0 && idx<100 && idy>=0 && idy<100)
-                        {
-                            if(gridCloudCount(idx,idy)>0)
-                            {
-                                float temp_dist = gridCloudDistance(idx,idy);
-                                if(fabs(distance-temp_dist)>0.1)
-                                    gridEven=false;
-                            }
-                        }
-                    }
-                }
-            }
-            // find uneven grid
-            if(!gridEven)
-            {
-                Eigen::Vector3f pt(gridCloudMeanX(i,j),gridCloudMeanY(i,j),gridCloudMeanZ(i,j));
-                Eigen::Vector3f ptSensorFrame = pt + centriodPt;
-
-                newPointCloud->features.cols(unevenGridCount).head(3) = ptSensorFrame;
-                unevenGridCount++;
-            }
-        }
-    }
-
-    newPointCloud->conservativeResize(unevenGridCount);
-*/
-}
-
-void Mapper::cloudHeightTrim(DP* newPointCloud) //this point cloud should be in odom frame
-{
-    DP *tempCloud = new DP(newPointCloud->features, newPointCloud->featureLabels,
-                         newPointCloud->descriptors, newPointCloud->descriptorLabels);
-    int cloudCount = newPointCloud->features.cols();
-
-    int filteredCloudCount = 0;
-    for(int i = 0; i<cloudCount; i++)
-    {
-        float pt_z = newPointCloud->features(2,i);
-
-        if(pt_z < heightFilterMax) // cloud points that close to ground
-        {
-            const Eigen::Vector2f planarPt = tempCloud->features.col(i).head(2);
-            float pt_xyNorm = planarPt.norm();
-
-            // customized threshold for each point
-            double threshold_z = heightFilterMin + heightFilterDistRatio * pt_xyNorm ;
-
-            if(pt_z > threshold_z)  // cloud points that are not scanned from ground
-            {
-                newPointCloud->setColFrom(filteredCloudCount, *tempCloud, i);
-                filteredCloudCount++;
-            }
-        }
-        else if(pt_z < robotMaximalHeight)  // cloud points that is lower than robot height
-        {
-            newPointCloud->setColFrom(filteredCloudCount, *tempCloud, i);
-            filteredCloudCount++;
-        }
-    }
-
-    delete tempCloud;
-    newPointCloud->conservativeResize(filteredCloudCount);
-}
-
 Mapper::DP* Mapper::updateMap(DP* newPointCloud, const PM::TransformationParameters Ticp, bool updateExisting)
 {
-    timer t;
-
     if (!updateExisting)
     {
         // FIXME: correct that, ugly

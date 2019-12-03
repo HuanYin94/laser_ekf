@@ -4,11 +4,11 @@ readingDataPointsFilters:
 #  - RandomSamplingDataPointsFilter:
 #      prob: 0.1
 
-referenceDataPointsFilters:
-  - MaxDistDataPointsFilter:
-      maxDist: 100.0
-  - MaxDensityDataPointsFilter:
-      maxDensity: 100
+#referenceDataPointsFilters:
+#  - MaxDistDataPointsFilter:
+#      maxDist: 100.0
+#  - MaxDensityDataPointsFilter:
+#      maxDensity: 100
 #  - RandomSamplingDataPointsFilter:
 #        prob: 0.01
 
