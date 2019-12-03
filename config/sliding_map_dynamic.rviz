@@ -236,7 +236,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 4
+      Size (Pixels): 5
       Size (m): 0.1
       Style: Points
       Topic: /sliding_map
@@ -298,22 +298,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 26.2869
+      Distance: 29.6625
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -2.58576
-        Y: 0.123676
-        Z: 0
+        X: 3.53712
+        Y: 0.703672
+        Z: -1.90735e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.8948
+      Pitch: 0.7298
       Target Frame: <Fixed Frame>
       Value: ThirdPersonFollower (rviz)
-      Yaw: 3.10588
+      Yaw: 3.33088
     Saved: ~
 Window Geometry:
   Displays:
@@ -331,5 +331,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 939
-  X: 921
+  X: 911
   Y: 14

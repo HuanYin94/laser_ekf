@@ -15,11 +15,11 @@
 
 	<!--New sensor set, New calibration needed.-->
 
-	<!--node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1.95685 -2.19474 -0.1 -0.017 -0.0104 -0.521 -0.853 laser2 laser1 50" />
-    <node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="7.5012 1.4813 0.962 0 0 -0.3625 0.9320 base_footprint laser2 50" /-->
+	<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1.95685 -2.19474 -0.1 -0.017 -0.0104 -0.521 -0.853 laser2 laser1 50" />
+    <node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="7.5012 1.4813 0.962 0 0 -0.3625 0.9320 base_footprint laser2 50" />
 
-    <node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="7.5012 -1.4813 -0.962 0 0 -0.3625 0.9320 base_footprint laser2 50" />
-	<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="-2.05685 1.99474 0 0.0000 0.0000 0.7880 0.6157 laser2 laser1 100" />
+    <!--node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="7.5012 -1.4813 -0.962 0 0 -0.3625 0.9320 base_footprint laser2 50" />
+	<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="-2.05685 1.99474 0 0.0000 0.0000 0.7880 0.6157 laser2 laser1 100" /-->
 
 	
 
@@ -33,11 +33,10 @@
         <arg name="publishMapTF" default="false"/>
 
 
-        
+ 
 
 
-		<node pkg="laser_ekf" type="sliding_mapper_double" name="sliding_mapper_double" output="screen" >
-		
+		<node pkg="laser_ekf" type="sliding_mapper_double" name="sliding_mapper_double" output="screen">
 		<param name="publishMapTF" value="$(arg publishMapTF)"/>
 		<param name="subscribe_scan" value="false"/>
 		<param name="subscribe_cloud" value="true"/>
