@@ -38,10 +38,10 @@ target_link_libraries(odom_zh
 ${catkin_LIBRARIES}
 )
 
-add_executable(odom_mine src/odom_mine.cpp)
-target_link_libraries(odom_mine
-${catkin_LIBRARIES}
-)
+#add_executable(odom_imu src/odom_imu.cpp)
+#target_link_libraries(odom_imu
+#${catkin_LIBRARIES}
+#)
 
 
 

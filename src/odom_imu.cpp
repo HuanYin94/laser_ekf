@@ -13,7 +13,10 @@
 #include "pointmatcher_ros/transform.h"
 #include <fstream>
 
-#define DELTA_TIME 0.02
+#include "sensor_msgs/Imu.h"
+
+// IMU 100Hz
+#define DELTA_TIME 0.01
 
 using namespace std;
 using namespace Eigen;
@@ -26,12 +29,12 @@ public:
     ~odom();
     ros::NodeHandle& n;
 
-    ros::Subscriber velocity_angular_sub;
+    ros::Subscriber imu_msg_sub;
 
     // poses & quats(wheels)
-    geometry_msgs::Vector3Stamped velocity_angular;
+    sensor_msgs::Imu imu_motion;
 
-    void gotVelocityAngular(const geometry_msgs::Vector3Stamped& msgIn);
+    void gotIMUMsg(const sensor_msgs::Imu& msgIn);
 
     // do math
     float to_radians(float degrees);
@@ -63,18 +66,18 @@ odom::odom(ros::NodeHandle& n):
     // ???
     this->veh_sta << 0, 0, 0;
 
+    // all odom msgs are regarded as wheel_odom
     odomPub = n.advertise<nav_msgs::Odometry>("wheel_odom", 1, true);
 
     cout<<"------------------------------"<<endl;
-    velocity_angular_sub = n.subscribe("velocity_angular", 1, &odom::gotVelocityAngular, this);
+    imu_msg_sub = n.subscribe("/mti/sensor/imu", 1, &odom::gotIMUMsg, this);
 
 }
 
-void odom::gotVelocityAngular(const geometry_msgs::Vector3Stamped& msgIn)
+void odom::gotIMUMsg(const sensor_msgs::Imu& msgIn)
 {
-//    cout<<"I heard the wheel angs."<<endl;
-    this->velocity_angular = msgIn;
-    cout<<msgIn.header.seq<<endl;
+    this->imu_motion = msgIn;
+    cout<<imu_motion.header.seq<<endl;
     // process&publish the odometry data
     this->process_pub_odom();
 }
@@ -204,16 +207,12 @@ Matrix3f odom::getMotionR(float lastOrient)
     return R;
 }
 
-
-
-
-
 int main(int argc, char **argv)
 {
 
     // INIT
-    /// new odom code in 2019.05.31
-    ros::init(argc, argv, "odom_may");
+    /// new odom code in 2019.11,our own imu sensor
+    ros::init(argc, argv, "odom_nov");
     ros::NodeHandle n;
 
     odom odom_(n);
