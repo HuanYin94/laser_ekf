@@ -1,0 +1,16 @@
+<launch>
+
+	<node pkg="laser_ekf" type="ekf_delay" name="ekf_delay" output="screen" >
+		
+		<param name="mag_dis_th" value="9999"/>
+
+		<param name="is_use_laser" value="true"/>
+		<param name="laserodom_dis_th" value="0.01"/>
+
+		<param name="isSave" value="false"/>
+		<param name="savePoseName" value="/home/yh/some_zhenhua/2019.04.08/loc_wheel_mag_laser_15-46-05.txt"/>
+		<param name="saveMagName" value="/home/yh/some_zhenhua/2019.04.08/mag_15-46-05.txt"/>		
+[ 
+	</node>
+
+</launch>

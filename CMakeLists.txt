@@ -43,5 +43,9 @@ ${catkin_LIBRARIES}
 #${catkin_LIBRARIES}
 #)
 
+add_executable(ekf_delay src/ekf_delay.cpp)
+target_link_libraries(ekf_delay
+${catkin_LIBRARIES}
+)
 
 

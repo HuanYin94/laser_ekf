@@ -209,7 +209,7 @@ Mapper::Mapper(ros::NodeHandle& n, ros::NodeHandle& pn):
     maxDistNewPoint(pow(getParam<double>("maxDistNewPoint", 0.1),2)),
     TFootPrintToMap(PM::TransformationParameters::Identity(4, 4)),
     TFootPrintToPlaneOdom(PM::TransformationParameters::Identity(4, 4)),
-    publishStamp(ros::Time::now()),
+    publishStamp(ros::Time(0)),
     tfListener(ros::Duration(30)),
     odomReceived(false),
     eps(0.0001)
@@ -737,7 +737,7 @@ Mapper::DP* Mapper::updateMap(DP* newPointCloud, const PM::TransformationParamet
         // Outlier points are all classified to static points
         else if ( pts_norm < slidingMapMaxRange)
         {
-            //cout<<"slidingMapMaxRange =" <<slidingMapMaxRange<<endl;
+            cout<<"slidingMapMaxRange =" <<slidingMapMaxRange<<endl;
             mapPointCloudInSensorFrameOutlier->setColFrom(mapPointCloudInSensorFrameOutlierCount, *mapPointCloudInSensorFrame, i);
             mapPointCloudInSensorFrameOutlierCount++;
         }

@@ -3,11 +3,10 @@
 	<node pkg="laser_ekf" type="ekf_simple" name="ekf_simple" output="screen">
 	
 		<param name="mag_dis_th" value="10000000"/>
-		<param name="isPublishTF" value="true"/>
-	
-		<param name="isSaveOut" value="false"/>
-		<param name="savePoseFileName" value="/home/yh/some_zhenhua/2019.04.08/laser_ekf_36.txt"/>
-		<param name="saveMagFileName" value="/home/yh/some_zhenhua/2019.04.08/mag_ekf_36.txt"/>
+		
+		<param name="init_x" value="10"/>
+		<param name="init_y" value="10"/>
+		<param name="init_yaw" value="0"/>
 
 	</node>
 

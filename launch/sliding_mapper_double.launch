@@ -15,11 +15,11 @@
 
 	<!--New sensor set, New calibration needed.-->
 
-	<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1.95685 -2.19474 -0.1 -0.017 -0.0104 -0.521 -0.853 laser2 laser1 50" />
-    <node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="7.5012 1.4813 0.962 0 0 -0.3625 0.9320 base_footprint laser2 50" />
+	<!--node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1.95685 -2.19474 -0.1 -0.017 -0.0104 -0.521 -0.853 laser2 laser1 50" />
+    <node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="7.5012 1.4813 0.962 0 0 -0.3625 0.9320 base_footprint laser2 50" /-->
 
-    <!--node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="7.5012 -1.4813 -0.962 0 0 -0.3625 0.9320 base_footprint laser2 50" />
-	<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="-2.05685 1.99474 0 0.0000 0.0000 0.7880 0.6157 laser2 laser1 100" /-->
+    <node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="7.5012 -1.4813 -0.962 0 0 -0.3625 0.9320 base_footprint laser2 50" />
+	<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="-2.05685 1.99474 0 0.0000 0.0000 0.7880 0.6157 laser2 laser1 100" />
 
 	
 
@@ -66,7 +66,7 @@
 		<param name="mapping" value="true" />
 
         <param name="sensorMaxRange" value="80"/>  <!--80-->
-        <param name="slidingMapMaxRange" value="80"/>  <!--85-->
+        <param name="slidingMapMaxRange" value="30"/>  <!--85-->
 
 		<param name="priorStatic" value="0.45"/>  <!--0.45-->
 		<param name="priorDyn" value="0.55"/>     <!--0.55-->
@@ -78,7 +78,7 @@
 		<param name="maxDyn" value="0.90"/>    <!--0.90 : Probability at which a point is considered permanently dynamic-->
         <param name="dynThreshold" value="0.85"/>
 
-		<param name="maxDistNewPoint" value="0.7"/>  <!--0.7 -->
+		<param name="maxDistNewPoint" value="0.5"/>  <!--0.7 -->
 	</node>	
 
 </launch>

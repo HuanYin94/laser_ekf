@@ -20,6 +20,8 @@
 #include <fstream>
 #include <visualization_msgs/Marker.h>
 
+#include "geometry_msgs/Pose2D.h"
+
 using namespace std;
 using namespace Eigen;
 using namespace PointMatcherSupport;
@@ -36,7 +38,7 @@ public:
     ros::Subscriber mag_pose_sub;
 
     void gotMagPose(const geometry_msgs::PointStamped& msgIn);
-    void goTbaseOdom(const nav_msgs::Odometry& msgIn);
+    void gotLaserOdom(const nav_msgs::Odometry& msgIn);
 
     nav_msgs::Odometry odo_msg_timing;
 
@@ -52,8 +54,6 @@ public:
     nav_msgs::Odometry laser_odom;
 
     float mag_dis_th;
-    string savePoseFileName;
-    string saveMagFileName;
 
     bool mag_init_flag = true;
     bool loc_init_flag = true;
@@ -78,8 +78,8 @@ public:
     Matrix3f conv_sigma;
     Matrix3f conv_sigma_predict;
 
-    Matrix3f noise_R;
-    Matrix3f noise_Q;
+    Matrix3f noise_R; // laser odom
+    Matrix3f noise_Q; // mag
     Matrix3f Jacob_F;
     Matrix3f Jacob_H;
     Matrix3f Gain_K;
@@ -91,10 +91,8 @@ public:
 
     float angleNorm(float head);
 
-    bool isPublishTF;
     void publishTF(ros::Time pubTime);
 
-    bool isSaveOut;
     ofstream outSavePose;
     ofstream outSaveMag;
 
@@ -107,6 +105,12 @@ public:
     void publishMarker(Vector3f input, int cnt);
     int marker_cnt;
 
+    //
+    geometry_msgs::Pose2D veh_sta_udp;
+    ros::Publisher veh_sta_udp_pub;
+
+    // init
+    float init_x, init_y, init_yaw;
 };
 
 ekf::~ekf()
@@ -115,10 +119,9 @@ ekf::~ekf()
 ekf::ekf(ros::NodeHandle& n):
     n(n),
     mag_dis_th(getParam<float>("mag_dis_th", 5.0)),
-    isPublishTF(getParam<bool>("isPublishTF", true)),
-    saveMagFileName(getParam<string>("saveMagFileName", ".")),
-    savePoseFileName(getParam<string>("savePoseFileName", ".")),
-    isSaveOut(getParam<bool>("isSaveOut", false))
+    init_x(getParam<float>("init_x", 0.0)),
+    init_y(getParam<float>("init_y", 0.0)),
+    init_yaw(getParam<float>("init_yaw", 0.0))
 {
     // init 000
     this->sysInit();
@@ -127,10 +130,12 @@ ekf::ekf(ros::NodeHandle& n):
 
     vis_pub = n.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
+    /// TEMP NOTED
 //    mag_pose_sub = n.subscribe("mag_pose", 1, &ekf::gotMagPose, this);
 
-    laserOdomSub = n.subscribe("laser_odom_2d", 1, &ekf::goTbaseOdom, this);
+    laserOdomSub = n.subscribe("laser_odom_2d", 1, &ekf::gotLaserOdom, this);
 
+    veh_sta_udp_pub = n.advertise<geometry_msgs::Pose2D>("veh_sta_udp", 1);
 }
 
 void ekf::gotMagPose(const geometry_msgs::PointStamped& msgIn)
@@ -164,22 +169,9 @@ void ekf::gotMagPose(const geometry_msgs::PointStamped& msgIn)
 //            measure_flag = false;
         }
     }
-
-    // save the gournd truth
-    if(isSaveOut)
-    {
-        // save mag pose
-        outSaveMag.open(saveMagFileName, ios::out|ios::ate|ios::app);
-        outSaveMag << msgIn.header.stamp <<"    "
-                   << msgIn.point.x << "    "
-                << msgIn.point.y << "   "
-                << msgIn.point.z <<endl;
-        outSaveMag.close();
-    }
-
 }
 
-void ekf::goTbaseOdom(const nav_msgs::Odometry& odomMsgIn)
+void ekf::gotLaserOdom(const nav_msgs::Odometry& odomMsgIn)
 {
     // just record the time
     odo_msg_timing = odomMsgIn;
@@ -260,17 +252,6 @@ void ekf::goTbaseOdom(const nav_msgs::Odometry& odomMsgIn)
 
     float d_yaw = this->to_degrees(world_motion(2));
 
-    if(isSaveOut)
-    {
-        // save estimated pose
-        outSavePose.open(savePoseFileName, ios::out|ios::ate|ios::app);
-        outSavePose << odomMsgIn.header.stamp <<"   "
-                    << vehicle_pose(0) << " "
-                << vehicle_pose(1) << " "
-                << vehicle_pose(2) <<endl;
-        outSavePose.close();
-    }
-
 }
 
 void ekf::sysInit()
@@ -281,14 +262,14 @@ void ekf::sysInit()
 
 //    vehicle_pose << mag_pose.point.x, mag_pose.point.y, this->angleNorm(mag_pose.point.z);
     /// INIT POSE FOR THIS TURN
-    vehicle_pose << 0,0,0;
+    vehicle_pose << init_x, init_y, init_yaw;
 
     // vis pub
-    this->publishMarker(mag_measured, marker_cnt); marker_cnt++;
+//    this->publishMarker(mag_measured, marker_cnt); marker_cnt++;
+//    this->TMapToWorld = this->Pose2DToRT3D(mag_measured);
+//    cout<<TMapToWorld<<endl;
 
-    this->TMapToWorld = this->Pose2DToRT3D(mag_measured);
-
-    cout<<TMapToWorld<<endl;
+    this->TMapToWorld = this->Pose2DToRT3D(vehicle_pose);
 
     TlastbaseOdom = TbaseOdom = PM::TransformationParameters::Identity(4, 4);
 
@@ -301,11 +282,20 @@ void ekf::sysInit()
     I = Matrix3f::Identity();
 
     loc_init_flag = false;
+
+    ros::Duration(0.5).sleep();
 }
 
 void ekf::publishTF(ros::Time pubTime)
 {
     cout<<"publish!!!"<<endl;
+
+    /// send a msg for rqt_plot, 2019.11
+    veh_sta_udp.x = vehicle_pose(0);
+    veh_sta_udp.y = vehicle_pose(1);
+    veh_sta_udp.theta = vehicle_pose(2);
+
+    veh_sta_udp_pub.publish(veh_sta_udp);
 
     // T_basetomap
     TBaseToWorld = this->Pose2DToRT3D(vehicle_pose);

@@ -43,7 +43,7 @@ Visualization Manager:
   Class: ""
   Displays:
     - Alpha: 0.5
-      Cell Size: 1
+      Cell Size: 10
       Class: rviz/Grid
       Color: 160; 160; 164
       Enabled: true
@@ -298,22 +298,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 29.6625
+      Distance: 26.5457
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 3.53712
-        Y: 0.703672
-        Z: -1.90735e-06
+        X: -1.81869
+        Y: -1.21268
+        Z: 2.49179e-05
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.7298
+      Pitch: 1.0548
       Target Frame: <Fixed Frame>
       Value: ThirdPersonFollower (rviz)
-      Yaw: 3.33088
+      Yaw: 2.89588
     Saved: ~
 Window Geometry:
   Displays:
@@ -331,5 +331,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 939
-  X: 911
+  X: 891
   Y: 14
