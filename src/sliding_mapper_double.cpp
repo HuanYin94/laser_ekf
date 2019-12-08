@@ -66,6 +66,7 @@ class Mapper
     ros::Publisher mapPub;
     ros::Publisher sensorOdomPub;
     ros::Publisher footPrintToPlaneOdomPub;
+    ros::Publisher footPrintToMapPub;
 
     // Time
     ros::Time mapCreationTime;
@@ -299,6 +300,7 @@ Mapper::Mapper(ros::NodeHandle& n, ros::NodeHandle& pn):
     mapPub = n.advertise<sensor_msgs::PointCloud2>("sliding_map", 1, true);
     sensorOdomPub = n.advertise<nav_msgs::Odometry>("laser_odom_3d", 1, true);
     footPrintToPlaneOdomPub = n.advertise<nav_msgs::Odometry>("laser_odom_2d", 1, true);
+    footPrintToMapPub = n.advertise<nav_msgs::Odometry>("laser_odom_zh", 1, true);
 
     // refreshing tf transform thread
     publishThread = boost::thread(boost::bind(&Mapper::publishLoop, this, tfRefreshPeriod));
@@ -622,8 +624,8 @@ void Mapper::processCloud(unique_ptr<DP> newPointCloud, const std::string& scann
         footPrintToPlaneOdomMsg.child_frame_id  = baseFootPrintFrame;
 
         nav_msgs::Odometry footPrintToMapMsg = PointMatcher_ros::eigenMatrixToOdomMsg<float>(TFootPrintToMap, mapFrame, stamp);
-        footPrintToPlaneOdomMsg.header.frame_id = mapFrame;
-        footPrintToPlaneOdomMsg.child_frame_id  = baseFootPrintFrame;
+        footPrintToMapMsg.header.frame_id = mapFrame;
+        footPrintToMapMsg.child_frame_id  = baseFootPrintFrame;
 
         if (sensorOdomPub.getNumSubscribers())
             sensorOdomPub.publish(sensorToMapMsg);
@@ -631,6 +633,11 @@ void Mapper::processCloud(unique_ptr<DP> newPointCloud, const std::string& scann
         // Publish odom to map (map is initialized on baseFootPrintFrame)
         if (footPrintToPlaneOdomPub.getNumSubscribers())
             footPrintToPlaneOdomPub.publish(footPrintToPlaneOdomMsg);
+
+        // yh
+        //publish base to map
+        if(footPrintToMapPub.getNumSubscribers())
+            footPrintToMapPub.publish(footPrintToMapMsg);
 
         // check if news points should be added to the map
         if (

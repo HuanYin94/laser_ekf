@@ -39,8 +39,10 @@ public:
 
     void gotMagPose(const geometry_msgs::PointStamped& msgIn);
     void gotLaserOdom(const nav_msgs::Odometry& msgIn);
+    void gotWheelOdom(const nav_msgs::Odometry& msgIn);
 
     ros::Subscriber laserOdomSub;
+    ros::Subscriber wheelOdomSub;
 
     tf::TransformBroadcaster tfBroader;
     tf::TransformListener tfListener;
@@ -55,8 +57,13 @@ public:
     bool loc_init_flag = true;
     bool measure_flag = false;
 
-    PM::TransformationParameters TlastOdom_laser;
-    PM::TransformationParameters TOdom_laser;
+    PM::TransformationParameters TlastOdom_wheel;
+    PM::TransformationParameters TOdom_wheel;
+
+    PM::TransformationParameters TBaseToMap_laser;
+    PM::TransformationParameters TBaseToWorld_laser;
+
+    Vector3f laser_measured;
 
     PM::TransformationParameters TMapToWorld;
     PM::TransformationParameters TBaseToMap;
@@ -72,8 +79,8 @@ public:
     Vector3f vehicle_pose_predict;
 
     Matrix3f conv_sigma;
-    Matrix3f conv_sigma_predict;
 
+    Matrix3f noise_P; // wheel odom
     Matrix3f noise_R; // laser odom
     Matrix3f noise_Q; // mag
     Matrix3f Jacob_F;
@@ -131,6 +138,8 @@ ekf::ekf(ros::NodeHandle& n):
 
     laserOdomSub = n.subscribe("laser_odom_zh", 1, &ekf::gotLaserOdom, this);
 
+    wheelOdomSub = n.subscribe("wheel_odom", 1, &ekf::gotWheelOdom, this);
+
     veh_sta_udp_pub = n.advertise<geometry_msgs::Pose2D>("veh_sta_udp", 1);
 }
 
@@ -141,22 +150,24 @@ void ekf::sysInit()
     cout<<"System Initial!"<<endl;
 
 //    vehicle_pose << mag_pose.point.x, mag_pose.point.y, this->angleNorm(mag_pose.point.z);
-    /// INIT POSE FOR THIS TURN
-    vehicle_pose << init_x, init_y, init_yaw;
-
     // vis pub
 //    this->publishMarker(mag_measured, marker_cnt); marker_cnt++;
 //    this->TMapToWorld = this->Pose2DToRT3D(mag_measured);
 //    cout<<TMapToWorld<<endl;
 
+    /// INIT by HUMAN
+    vehicle_pose << init_x, init_y, init_yaw;
     this->TMapToWorld = this->Pose2DToRT3D(vehicle_pose);
 
-    TlastOdom_laser = TOdom_laser = PM::TransformationParameters::Identity(4, 4);
+    TlastOdom_wheel = TOdom_wheel = PM::TransformationParameters::Identity(4, 4);
 
     conv_sigma << 999999999*Matrix3f::Identity(); // 3x3
 
+    // WHEEL
+    noise_P = 0.1*Matrix3f::Identity();  // 3x3
+
     // LASER
-    noise_R = 0.05*Matrix3f::Identity();  // 3x3
+    noise_R = 0.01*Matrix3f::Identity();  // 3x3
 
     // MAG
     Jacob_H = 1.0*Matrix3f::Identity();   // jacob for measure is constant in this case
@@ -199,12 +210,12 @@ void ekf::gotMagPose(const geometry_msgs::PointStamped& msgIn)
     }
 }
 
-void ekf::gotLaserOdom(const nav_msgs::Odometry& odomMsgIn)
+void ekf::gotLaserOdom(const nav_msgs::Odometry& msgIn)
 {
-    this->TOdom_laser = PointMatcher_ros::odomMsgToEigenMatrix<float>(odomMsgIn);
-
     // process here
     cout<<"----------------------laser----------------------"<<endl;
+
+    TBaseToMap_laser = PointMatcher_ros::odomMsgToEigenMatrix<float>(msgIn);
 
     // initial need mag inf
     if(loc_init_flag && !mag_init_flag)
@@ -213,10 +224,37 @@ void ekf::gotLaserOdom(const nav_msgs::Odometry& odomMsgIn)
         return;
     }
 
-    /// Predict Motion and Noise
+    /// USE LASER AS A OBERVATION
+    TBaseToWorld_laser = TMapToWorld * TBaseToMap_laser;
+
+    laser_measured = this->get2DTransform(TBaseToWorld_laser);
+
+    cout<<"laser reg:   "<<laser_measured.transpose()<<endl;
+
+    // ekf observation
+    Matrix3f K_ = Jacob_H * conv_sigma * Jacob_H.transpose() + noise_R;
+
+    Gain_K = conv_sigma * Jacob_H.transpose() * K_.inverse();
+
+    vehicle_pose = vehicle_pose + Gain_K * (laser_measured - Jacob_H * vehicle_pose);
+
+    conv_sigma = (I - Gain_K*Jacob_H) * conv_sigma;
+
+    this->publishTF(msgIn.header.stamp);
+
+    cout<<"vehicle pose:    " <<vehicle_pose.transpose()<<endl;
+}
+
+void ekf::gotWheelOdom(const nav_msgs::Odometry &msgIn)
+{
+    cout<<"----------------------wheel----------------------"<<endl;
+
+    this->TOdom_wheel = PointMatcher_ros::odomMsgToEigenMatrix<float>(msgIn);
+
+    /// Copy from laser odom
     /// motion, from robot_base to world
-    PM::TransformationParameters TOdomRelative = TlastOdom_laser.inverse() * TOdom_laser;
-    TlastOdom_laser = TOdom_laser;
+    PM::TransformationParameters TOdomRelative = TlastOdom_wheel.inverse() * TOdom_wheel;
+    TlastOdom_wheel = TOdom_wheel;
 
     Vector3f self_motion = this->get2DTransform(TOdomRelative);
     Matrix3f R_theta = this->getMotionR(vehicle_pose(2));
@@ -226,15 +264,14 @@ void ekf::gotLaserOdom(const nav_msgs::Odometry& odomMsgIn)
     cout<<"motion:  "<<world_motion.transpose()<<endl;
 
     /// in World Coordinate
-    /// laser odom
+    /// Wheel/IMU Odom
     vehicle_pose_predict = vehicle_pose + world_motion;
     Jacob_F = this->getJacob_F(vehicle_pose(2), self_motion(0), self_motion(1));
-    conv_sigma_predict = Jacob_F*conv_sigma*Jacob_F.transpose() + this->noise_R;
+    conv_sigma = Jacob_F*conv_sigma*Jacob_F.transpose() + this->noise_P;
 
     vehicle_pose = vehicle_pose_predict;
-    conv_sigma = conv_sigma_predict;
 
-    this->publishTF(odomMsgIn.header.stamp);
+    this->publishTF(msgIn.header.stamp);
 
     cout<<"vehicle pose:    " <<vehicle_pose.transpose()<<endl;
 }

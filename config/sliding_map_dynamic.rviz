@@ -13,11 +13,10 @@ Panels:
         - /PointCloud21
         - /Odometry1
         - /RobotModel1
-        - /Odometry2
-        - /Odometry3
         - /Marker1
         - /PointCloud22
         - /PointCloud23
+        - /Odometry2
       Splitter Ratio: 0.5
     Tree Height: 747
   - Class: rviz/Selection
@@ -137,14 +136,14 @@ Visualization Manager:
       Value: true
     - Angle Tolerance: 0.1
       Class: rviz/Odometry
-      Color: 0; 0; 255
-      Enabled: false
+      Color: 255; 255; 0
+      Enabled: true
       Keep: 99999
-      Length: 10
+      Length: 3
       Name: Odometry
       Position Tolerance: 0.1
       Topic: /wheel_odom
-      Value: false
+      Value: true
     - Alpha: 0.5
       Class: rviz/RobotModel
       Collision Enabled: false
@@ -186,26 +185,6 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
-    - Angle Tolerance: 0.1
-      Class: rviz/Odometry
-      Color: 255; 0; 0
-      Enabled: true
-      Keep: 999999
-      Length: 2
-      Name: Odometry
-      Position Tolerance: 0.1
-      Topic: /laser_odom_2d
-      Value: true
-    - Angle Tolerance: 0.1
-      Class: rviz/Odometry
-      Color: 255; 25; 0
-      Enabled: false
-      Keep: 100
-      Length: 2
-      Name: Odometry
-      Position Tolerance: 0.1
-      Topic: /laser_odom_3d
-      Value: false
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /visualization_marker
@@ -274,6 +253,16 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
+    - Angle Tolerance: 0.1
+      Class: rviz/Odometry
+      Color: 255; 25; 0
+      Enabled: true
+      Keep: 99999
+      Length: 2
+      Name: Odometry
+      Position Tolerance: 0.1
+      Topic: /laser_odom_zh
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
@@ -297,23 +286,23 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz/ThirdPersonFollower
-      Distance: 26.5457
+      Class: rviz/Orbit
+      Distance: 96.1039
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -1.81869
-        Y: -1.21268
-        Z: 2.49179e-05
+        X: 44.7418
+        Y: 9.69061
+        Z: 6.10343
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.0548
+      Pitch: 0.9048
       Target Frame: <Fixed Frame>
-      Value: ThirdPersonFollower (rviz)
-      Yaw: 2.89588
+      Value: Orbit (rviz)
+      Yaw: 2.71588
     Saved: ~
 Window Geometry:
   Displays:
@@ -331,5 +320,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 939
-  X: 891
+  X: 851
   Y: 14
