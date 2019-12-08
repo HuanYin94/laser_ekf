@@ -13,10 +13,7 @@
 #include "pointmatcher_ros/transform.h"
 #include <fstream>
 
-#include "sensor_msgs/Imu.h"
-
-// IMU 100Hz
-#define DELTA_TIME 0.01
+#define DELTA_TIME 0.02
 
 using namespace std;
 using namespace Eigen;
@@ -29,16 +26,11 @@ public:
     ~odom();
     ros::NodeHandle& n;
 
-    ros::Subscriber imu_msg_sub;
-
-    // poses & quats(wheels)
-    sensor_msgs::Imu imu_motion;
-
-    void gotIMUMsg(const sensor_msgs::Imu& msgIn);
+    ros::Subscriber velocity_angular_sub;
 
     // do math
     float to_radians(float degrees);
-    void process_pub_odom();
+    void process_odom();
 
     // odometry msg
     long int cnt = 0;
@@ -66,31 +58,28 @@ odom::odom(ros::NodeHandle& n):
     // ???
     this->veh_sta << 0, 0, 0;
 
-    // all odom msgs are regarded as wheel_odom
     odomPub = n.advertise<nav_msgs::Odometry>("wheel_odom", 1, true);
 
     cout<<"------------------------------"<<endl;
-    imu_msg_sub = n.subscribe("/mti/sensor/imu", 1, &odom::gotIMUMsg, this);
+//    velocity_angular_sub = n.subscribe("velocity_angular", 1, &odom::gotVelocityAngular, this);
+
+    while(ros::ok())
+    {
+        process_odom();
+        ros::Duration(DELTA_TIME).sleep();
+    }
 
 }
 
-void odom::gotIMUMsg(const sensor_msgs::Imu& msgIn)
-{
-    this->imu_motion = msgIn;
-    cout<<imu_motion.header.seq<<endl;
-    // process&publish the odometry data
-    this->process_pub_odom();
-}
-
-void odom::process_pub_odom()
+void odom::process_odom()
 {
 
     cout<<"-----------------------------------------------------"<<endl;
 
     float Vx, Vy, angularV;
-    Vx = velocity_angular.vector.x;
-    Vy = velocity_angular.vector.y;
-    angularV = velocity_angular.vector.z;
+    Vx = 0;
+    Vy = 0;
+    angularV = 0;
 
     float x_new, y_new, theta_new;
 
@@ -101,47 +90,10 @@ void odom::process_pub_odom()
     // re-new
     veh_sta(0) = x_new; veh_sta(1) = y_new; veh_sta(2) = theta_new;
 
-//    Vector3f self_motion;
-
-//    self_motion(0) = v_average*DELTA_TIME*cos(veh_sta(2));
-//    self_motion(1) = v_average*DELTA_TIME*sin(veh_sta(2));
-//    self_motion(2) = a_average*DELTA_TIME;
-
-//    Matrix3f R_theta = this->getMotionR(this->veh_sta(2));
-//    Vector3f world_motion = R_theta.inverse() * self_motion;
-
-//    // add
-//    veh_sta = veh_sta + world_motion;
-
     cout<<"odom state:   "<<veh_sta(0)<<"  "<<veh_sta(1)<<"  "<<veh_sta(2)<<endl;
 
     AngleAxisf V1(veh_sta(2), Vector3f(0, 0, 1));
     Matrix3f R1 = V1.toRotationMatrix();
-
-
-//    float dx = v_average * DELTA_TIME;
-//    float d_theta = a_average*DELTA_TIME;
-
-//    /// from matlab 2D traj file
-//    // delta value
-//    // delete and ignore
-
-//    AngleAxisf V1(d_theta, Vector3f(0, 0, 1));
-//    Matrix3f R1 = V1.toRotationMatrix();
-
-//    Matrix4f T_r;
-//    T_r << R1(0,0), R1(0,1), R1(0,2),  dx,
-//         R1(1,0), R1(1,1), R1(1,2),  0,
-//         R1(2,0), R1(2,1), R1(2,2), 0 ,
-//         0, 0, 0, 1;
-
-//    T_veh = T_veh_last*T_r;
-//    T_veh_last = T_veh;
-
-//    cout<<"T_veh:   "<<endl;
-//    cout<<T_veh<<endl;
-
-//    tfBroadcaster.sendTransform(PointMatcher_ros::eigenMatrixToStampedTransform<float>(T_veh, "map", "wheel", wheel_angs.header.stamp));
 
     // get the quatern for odom publish
     Matrix3f veh_rot;
@@ -159,9 +111,9 @@ void odom::process_pub_odom()
     odo_msg.pose.pose.orientation.z = Q1.z();
     odo_msg.pose.pose.orientation.w = Q1.w();
 
-    odo_msg.twist.twist.linear.x = velocity_angular.vector.x;
-    odo_msg.twist.twist.linear.y = velocity_angular.vector.y;
-    odo_msg.twist.twist.angular.x = velocity_angular.vector.z;
+    odo_msg.twist.twist.linear.x = Vx;
+    odo_msg.twist.twist.linear.y = Vy;
+    odo_msg.twist.twist.angular.x = angularV;
 
     /// set zero for test
 //    odo_msg.twist.twist.linear.x = 0;
@@ -169,8 +121,8 @@ void odom::process_pub_odom()
 //    odo_msg.twist.twist.angular.x = 0;
 
 
-    odo_msg.header.stamp = velocity_angular.header.stamp;
-    odo_msg.header.seq = velocity_angular.header.seq;
+    odo_msg.header.stamp = ros::Time::now();
+    odo_msg.header.seq = 999;
     odo_msg.header.frame_id = "world";
     odo_msg.child_frame_id = "base_footprint";
 
@@ -207,12 +159,16 @@ Matrix3f odom::getMotionR(float lastOrient)
     return R;
 }
 
+
+
+
+
 int main(int argc, char **argv)
 {
 
     // INIT
-    /// new odom code in 2019.11,our own imu sensor
-    ros::init(argc, argv, "odom_nov");
+    /// new odom code in 2019.05.31
+    ros::init(argc, argv, "odom_may");
     ros::NodeHandle n;
 
     odom odom_(n);

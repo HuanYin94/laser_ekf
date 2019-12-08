@@ -38,14 +38,17 @@ target_link_libraries(odom_zh
 ${catkin_LIBRARIES}
 )
 
-#add_executable(odom_imu src/odom_imu.cpp)
-#target_link_libraries(odom_imu
-#${catkin_LIBRARIES}
-#)
-
 add_executable(ekf_complex src/ekf_complex.cpp)
 target_link_libraries(ekf_complex
 ${catkin_LIBRARIES}
 )
 
+add_executable(sender2019 src/sender2019.cpp)
+target_link_libraries(sender2019
+${catkin_LIBRARIES}
+)
 
+add_executable(odom_fake src/odom_fake.cpp)
+target_link_libraries(odom_fake
+${catkin_LIBRARIES}
+)

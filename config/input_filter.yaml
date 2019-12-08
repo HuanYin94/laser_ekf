@@ -1,5 +1,5 @@
 - RandomSamplingDataPointsFilter:
-    prob: 0.1
+    prob: 0.2
 #- BoundingBoxDataPointsFilter:
 #    xMin: -15
 #    xMax: 0
