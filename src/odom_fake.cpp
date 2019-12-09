@@ -127,10 +127,7 @@ void odom::process_odom()
     odo_msg.child_frame_id = "base_footprint";
 
     odomPub.publish(odo_msg);
-
 }
-
-
 
 Matrix3f odom::matrixFromAngle(float x, float y, float z)
 {
