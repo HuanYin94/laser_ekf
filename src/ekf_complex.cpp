@@ -73,6 +73,7 @@ public:
     float calc2Ddistance(geometry_msgs::PointStamped lastMag, geometry_msgs::PointStamped nowMag);
     Vector3f get2DTransform(PM::TransformationParameters input);
     float to_degrees(float radians);
+    float to_radians(float degrees);
 
     //finals
     Vector3f vehicle_pose;
@@ -156,7 +157,10 @@ void ekf::sysInit()
 //    cout<<TMapToWorld<<endl;
 
     /// INIT by HUMAN
-    vehicle_pose << init_x, init_y, init_yaw;
+
+    // yaw, rad to deg
+    float yaw = this->angleNorm(this->to_radians(init_yaw));
+    vehicle_pose << init_x, init_y, yaw;
     this->TMapToWorld = this->Pose2DToRT3D(vehicle_pose);
 
     TlastOdom_wheel = TOdom_wheel = PM::TransformationParameters::Identity(4, 4);
@@ -351,6 +355,10 @@ Vector3f ekf::get2DTransform(PM::TransformationParameters input)
 
 float ekf::to_degrees(float radians) {
     return radians / M_PI * 180.0;
+}
+
+float ekf::to_radians(float degrees) {
+    return degrees / 180.0 * M_PI;
 }
 
 /// copy from locVeh.cpp

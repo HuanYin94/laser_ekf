@@ -66,6 +66,7 @@ public:
     float calc2Ddistance(geometry_msgs::PointStamped lastMag, geometry_msgs::PointStamped nowMag);
     Vector3f get2DTransform(PM::TransformationParameters input);
     float to_degrees(float radians);
+    float to_radians(float degrees);
 
     //finals
     Vector3f vehicle_pose;
@@ -142,7 +143,8 @@ void ekf::sysInit()
 
 //    vehicle_pose << mag_pose.point.x, mag_pose.point.y, this->angleNorm(mag_pose.point.z);
     /// INIT POSE FOR THIS TURN
-    vehicle_pose << init_x, init_y, init_yaw;
+    float yaw =this->angleNorm(this->to_degrees(init_yaw));
+    vehicle_pose << init_x, init_y, yaw;
 
     // vis pub
 //    this->publishMarker(mag_measured, marker_cnt); marker_cnt++;
@@ -314,6 +316,10 @@ Vector3f ekf::get2DTransform(PM::TransformationParameters input)
 
 float ekf::to_degrees(float radians) {
     return radians / M_PI * 180.0;
+}
+
+float ekf::to_radians(float degrees) {
+    return degrees / 180.0 * M_PI;
 }
 
 /// copy from locVeh.cpp

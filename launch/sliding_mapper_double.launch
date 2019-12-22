@@ -2,7 +2,7 @@
 	
 	<!--Others-->
 
-	<param name="use_sim_time" value="false" />
+	<param name="use_sim_time" value="true" />
 
 	<!--node pkg="laser_ekf" type="odom_zh" name="odom_zh"/-->
 	<node pkg="laser_ekf" type="odom_fake" name="odom_fake"/>
