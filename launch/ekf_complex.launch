@@ -4,9 +4,9 @@
 		
 		<param name="mag_dis_th" value="100000"/>
 
-		<param name="init_x" value="20"/>
-		<param name="init_y" value="10"/>
-		<param name="init_yaw" value="0"/>
+		<param name="init_x" value="3.998"/>
+		<param name="init_y" value="24.020"/>
+		<param name="init_yaw" value="-90.0232"/>
  
 	</node>
 

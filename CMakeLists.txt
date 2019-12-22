@@ -52,3 +52,8 @@ add_executable(odom_fake src/odom_fake.cpp)
 target_link_libraries(odom_fake
 ${catkin_LIBRARIES}
 )
+
+add_executable(server2019 src/server2019.cpp)
+target_link_libraries(server2019
+${catkin_LIBRARIES}
+)
