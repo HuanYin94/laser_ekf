@@ -856,7 +856,7 @@ int main(int argc, char **argv)
     ros::NodeHandle pn("~");
     Mapper mapper(n, pn);
 
-    ros::MultiThreadedSpinner spinner(4);
+    ros::MultiThreadedSpinner spinner(2);
     spinner.spin();
 
     return 0;

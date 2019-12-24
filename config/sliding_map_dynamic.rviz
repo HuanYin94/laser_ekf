@@ -42,7 +42,7 @@ Visualization Manager:
   Class: ""
   Displays:
     - Alpha: 0.5
-      Cell Size: 10
+      Cell Size: 5
       Class: rviz/Grid
       Color: 160; 160; 164
       Enabled: true
@@ -299,10 +299,10 @@ Visualization Manager:
         Z: 6.10343
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.9048
+      Pitch: 1.5248
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.71588
+      Yaw: 3.16588
     Saved: ~
 Window Geometry:
   Displays:
@@ -320,5 +320,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 939
-  X: 851
+  X: 841
   Y: 14
