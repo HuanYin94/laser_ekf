@@ -124,7 +124,8 @@ int main(int argc, char **argv)
     // Filling server information
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(PORT);
-    servaddr.sin_addr.s_addr = inet_addr("192.168.1.12");
+    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+//    servaddr.sin_addr.s_addr = inet_addr("192.168.1.12");
 //    servaddr.sin_addr.s_addr = inet_addr("192.168.1.11");
 
 
