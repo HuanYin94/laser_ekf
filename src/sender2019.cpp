@@ -126,7 +126,6 @@ int main(int argc, char **argv)
     servaddr.sin_port = htons(PORT);
     servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 //    servaddr.sin_addr.s_addr = inet_addr("192.168.1.12");
-//    servaddr.sin_addr.s_addr = inet_addr("192.168.1.11");
 
 
     PM::TransformationParameters T_base2world;
