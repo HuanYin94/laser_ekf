@@ -12,4 +12,7 @@
   <build_depend>roscpp</build_depend>
   <run_depend>roscpp</run_depend>
 
+  <build_depend>ethzasl_icp_mapper</build_depend>
+  <run_depend>ethzasl_icp_mapper</run_depend>
+
 </package>

@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf_conversions
   libpointmatcher_ros
   roslib
+  ethzasl_icp_mapper
 )
 
 add_definitions(-std=c++11 -O2 -g -DNDEBUG)
