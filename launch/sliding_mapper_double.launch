@@ -9,13 +9,11 @@
 
 	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find laser_ekf)/config/sliding_map_dynamic.rviz" output="screen"/>	
 
-	
-
-
-	<!--New sensor set, New calibration needed.-->
+	<!--Calib Result-->
+	<!--On red car, New sensor set, New calibration needed-->
 
 	<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1.95685 -2.19474 -0.1 -0.017 -0.0104 -0.521 -0.853 laser2 laser1 50" />
-    <node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="7.5012 1.4813 0.962 0 0 -0.3625 0.9320 base_footprint laser2 50" />
+	<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="7.5012 1.4813 0.962 0 0 -0.3625 0.9320 base_footprint laser2 50" />
 
     <!--node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="7.5012 -1.4813 -0.962 -0.0000 0.0000 -0.3845 0.9231
 base_footprint laser2 50" />
@@ -23,17 +21,17 @@ base_footprint laser2 50" />
 
 	
 
-
+	<!--Vehicle Model-->
 
 	<param name="robot_description" textfile="$(find laser_ekf)/config/zhenhua_vehicle.urdf" />
 	<param name="use_gui" value="false"/>
 	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
 	<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
 
-        <arg name="publishMapTF" default="false"/>
+    <arg name="publishMapTF" default="false"/>
 
 
- 
+ 		<!--Lv's Sliding Map-->
 
 
 		<node pkg="laser_ekf" type="sliding_mapper_double" name="sliding_mapper_double" output="screen">
@@ -79,6 +77,7 @@ base_footprint laser2 50" />
         <param name="dynThreshold" value="0.85"/>
 
 		<param name="maxDistNewPoint" value="0.5"/>  <!--0.7 -->
+
 	</node>	
 
 </launch>

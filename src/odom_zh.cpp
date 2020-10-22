@@ -204,10 +204,6 @@ Matrix3f odom::getMotionR(float lastOrient)
     return R;
 }
 
-
-
-
-
 int main(int argc, char **argv)
 {
 
