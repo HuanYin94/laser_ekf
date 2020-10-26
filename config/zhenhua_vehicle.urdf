@@ -4,7 +4,7 @@
       <geometry>
         <box size="15 3 2"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="0 0 -1"/>
+      <origin rpy="0 0 0" xyz="0 0 1"/>
       <material name="white">
         <color rgba="1 1 1 1"/>
       </material> 
@@ -16,7 +16,7 @@
       <geometry>
         <cylinder length="0.3" radius="0.875"/>
       </geometry>
-      <origin rpy="1.57 -1.57 0" xyz="4.4 1.5 -2"/>
+      <origin rpy="1.57 -1.57 0" xyz="4.4 1.5 0"/>
       <material name="black">
         <color rgba="1 1 1 1"/>
       </material> 
@@ -28,7 +28,7 @@
       <geometry>
         <cylinder length="0.3" radius="0.875"/>
       </geometry>
-      <origin rpy="1.57 -1.57 0" xyz="4.4 -1.5 -2"/>
+      <origin rpy="1.57 -1.57 0" xyz="4.4 -1.5 0"/>
       <material name="black">
         <color rgba="1 1 1 1"/>
       </material> 
@@ -40,7 +40,7 @@
       <geometry>
         <cylinder length="0.3" radius="0.875"/>
       </geometry>
-      <origin rpy="1.57 -1.57 0" xyz="-4.4 1.5 -2"/>
+      <origin rpy="1.57 -1.57 0" xyz="-4.4 1.5 0"/>
       <material name="black">
         <color rgba="1 1 1 1"/>
       </material> 
@@ -52,7 +52,7 @@
       <geometry>
         <cylinder length="0.3" radius="0.875"/>
       </geometry>
-      <origin rpy="1.57 -1.57 0" xyz="-4.4 -1.5 -2"/>
+      <origin rpy="1.57 -1.57 0" xyz="-4.4 -1.5 0"/>
       <material name="black">
         <color rgba="1 1 1 1"/>
       </material> 

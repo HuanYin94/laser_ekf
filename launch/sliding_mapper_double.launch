@@ -10,11 +10,16 @@
 	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find laser_ekf)/config/sliding_map_dynamic.rviz" output="screen"/>	
 
 	<!--Calib Result-->
-	<!--On red car, New sensor set, New calibration needed-->
-
-	<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1.95685 -2.19474 -0.1 -0.017 -0.0104 -0.521 -0.853 laser2 laser1 50" />
-	<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="7.5012 1.4813 0.962 0 0 -0.3625 0.9320 base_footprint laser2 50" />
-
+	<!--On red vehicle in 2020.10-->
+	
+	<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="-2.0 -2.2 0 -0.013 -0.012 -0.669 0.743 laser2 laser1 50"/>
+	<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="7.5012 1.4813 0.962 0 0 0.371 0.929 base_footprint laser2 50"/>	
+	
+	<!--On red vehicle in 2019.end-->
+	<!--node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1.95685 -2.19474 -0.1 -0.017 -0.0104 -0.521 -0.853 laser2 laser1 50" />
+	<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="7.5012 1.4813 0.962 0 0 -0.3625 0.9320 base_footprint laser2 50" /-->
+	
+	<!--blue vehicle in 2018 ? -->
     <!--node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="7.5012 -1.4813 -0.962 -0.0000 0.0000 -0.3845 0.9231
 base_footprint laser2 50" />
 	<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="-2.05685 1.99474 0 0.0000 0.0000 0.7880 0.6157 laser2 laser1 100" /-->
