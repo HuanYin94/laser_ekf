@@ -8,3 +8,5 @@
     maxPointByNode: 1
     maxSizeByNode: 0.2
     samplingMethod: 3
+- ObservationDirectionDataPointsFilter
+- OrientNormalsDataPointsFilter 

@@ -125,8 +125,8 @@ int main(int argc, char **argv)
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(PORT);
 //    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    servaddr.sin_addr.s_addr = inet_addr("192.168.1.12");
-
+    // servaddr.sin_addr.s_addr = inet_addr("192.168.1.12");
+    servaddr.sin_addr.s_addr = inet_addr("192.168.1.101");
 
     PM::TransformationParameters T_base2world;
     tf::TransformListener listener;
@@ -134,7 +134,8 @@ int main(int argc, char **argv)
     while(n.ok())
     {
         try
-        {
+        {   
+            listener.waitForTransform("base_footprint","world",ros::Time(0), ros::Duration(0.001));
             T_base2world = PointMatcher_ros::eigenMatrixToDim<float>(
                        PointMatcher_ros::transformListenerToEigenMatrix<float>(
                        listener,

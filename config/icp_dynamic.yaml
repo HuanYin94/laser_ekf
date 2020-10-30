@@ -1,6 +1,6 @@
 readingDataPointsFilters:
   - MaxDensityDataPointsFilter:
-      maxDensity: 50    ##100
+      maxDensity: 100    ##100
 #  - RandomSamplingDataPointsFilter:
 #      prob: 0.1
 
@@ -20,12 +20,12 @@ matcher:
 
 outlierFilters:
   - TrimmedDistOutlierFilter:
-     ratio: 0.5   
+     ratio: 0.75   
   - SurfaceNormalOutlierFilter:
      maxAngle: 1.78
-  #- GenericDescriptorOutlierFilter:
-   #  source: reference
-    # descName: probabilityStatic
+#- GenericDescriptorOutlierFilter:
+#  source: reference
+# descName: probabilityStatic
 
 errorMinimizer:
   PointToPlaneErrorMinimizer
