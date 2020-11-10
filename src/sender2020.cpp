@@ -68,13 +68,45 @@ Vector3f RT3D2Pose2D(PM::TransformationParameters RT)
     return pose;
 }
 
-void senderCallback(PM::TransformationParameters T_base2world)
+// void senderCallback(PM::TransformationParameters T_base2world)
+// {
+
+//     // 4x4 RT Matrix to pose-2D
+//     Vector3f pose = RT3D2Pose2D(T_base2world);
+
+//     /// udp, sth.
+//     udpMsg toVeh;
+
+//     toVeh.Header.flag = 0xcece;
+//     toVeh.Header.type = 0x0001;
+//     toVeh.Header.ID = idCnt;
+//     toVeh.Header.length = 16;
+//     toVeh.Header.sec = ros::Time::now().toSec();
+//     toVeh.Header.miliSec = ros::Time::now().toNSec();
+
+//     toVeh.pose_x = pose(0);
+//     toVeh.pose_y = pose(1);
+//     toVeh.heading = pose(2);
+//     toVeh.status = 1;
+
+//     memcpy(buffer, &toVeh, sizeof(toVeh));
+
+//     sendto(sockfd, (const char *)buffer, BYTENUM,
+//         MSG_CONFIRM, (const struct sockaddr *) &servaddr,
+//             sizeof(servaddr));
+
+//     cout<<"-----------------------------------------------"<<endl;
+
+//     cout<<toVeh.Header.ID <<"  "<<
+//           toVeh.pose_x<<"  "<<
+//           toVeh.pose_y<<"  "<<
+//           toVeh.heading<<endl;
+
+//     idCnt = idCnt + 1;
+// }
+
+void senderCallback(const geometry_msgs::Pose2D::ConstPtr& msg)
 {
-
-    // 4x4 RT Matrix to pose-2D
-    Vector3f pose = RT3D2Pose2D(T_base2world);
-
-    /// udp, sth.
     udpMsg toVeh;
 
     toVeh.Header.flag = 0xcece;
@@ -84,9 +116,9 @@ void senderCallback(PM::TransformationParameters T_base2world)
     toVeh.Header.sec = ros::Time::now().toSec();
     toVeh.Header.miliSec = ros::Time::now().toNSec();
 
-    toVeh.pose_x = pose(0);
-    toVeh.pose_y = pose(1);
-    toVeh.heading = pose(2);
+    toVeh.pose_x = msg->x;
+    toVeh.pose_y = msg->y;
+    toVeh.heading = msg->theta;
     toVeh.status = 1;
 
     memcpy(buffer, &toVeh, sizeof(toVeh));
@@ -94,8 +126,6 @@ void senderCallback(PM::TransformationParameters T_base2world)
     sendto(sockfd, (const char *)buffer, BYTENUM,
         MSG_CONFIRM, (const struct sockaddr *) &servaddr,
             sizeof(servaddr));
-
-    cout<<"-----------------------------------------------"<<endl;
 
     cout<<toVeh.Header.ID <<"  "<<
           toVeh.pose_x<<"  "<<
@@ -128,39 +158,40 @@ int main(int argc, char **argv)
     // servaddr.sin_addr.s_addr = inet_addr("192.168.1.12");
     servaddr.sin_addr.s_addr = inet_addr("192.168.1.101");
 
-    PM::TransformationParameters T_base2world;
-    tf::TransformListener listener;
-    ros::Rate rate(50.0);
+    
+    // PM::TransformationParameters T_base2world;
+    // tf::TransformListener listener;
+    // ros::Rate rate(50.0);
 
-    // listener.waitForTransform("base_footprint","world",ros::Time(0), ros::Duration(0.02));
+    // // listener.waitForTransform("base_footprint","world",ros::Time(0), ros::Duration(0.02));
 
-    while(n.ok())
-    {
-        try
-        {   
-            // listener.waitForTransform("base_footprint","world",ros::Time(0), ros::Duration(0.0001));
-            T_base2world = PointMatcher_ros::eigenMatrixToDim<float>(
-                       PointMatcher_ros::transformListenerToEigenMatrix<float>(
-                       listener,
-                       "world",
-                       "base_footprint",
-                       ros::Time(0)
-                   ), 4);
-        }
-        catch(tf::TransformException ex)
-        {
-            ROS_ERROR("transfrom exception : %s",ex.what());
-        }
-        senderCallback(T_base2world);
+    // while(n.ok())
+    // {
+    //     try
+    //     {   
+    //         // listener.waitForTransform("base_footprint","world",ros::Time(0), ros::Duration(0.0001));
+    //         T_base2world = PointMatcher_ros::eigenMatrixToDim<float>(
+    //                    PointMatcher_ros::transformListenerToEigenMatrix<float>(
+    //                    listener,
+    //                    "world",
+    //                    "base_footprint",
+    //                    ros::Time(0)
+    //                ), 4);
+    //     }
+    //     catch(tf::TransformException ex)
+    //     {
+    //         ROS_ERROR("transfrom exception : %s",ex.what());
+    //     }
+    //     senderCallback(T_base2world);
 
-        rate.sleep();
+    //     rate.sleep();
 
-    }
+    // }
+    
 
+   ros::Subscriber sub = n.subscribe("veh_sta_udp", 1, senderCallback);
 
-//    ros::Subscriber sub = n.subscribe("veh_sta_udp", 1, senderCallback);
-
-//    ros::spin();
+   ros::spin();
 
     return 0;
 }

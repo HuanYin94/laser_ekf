@@ -194,7 +194,6 @@ Mapper::Mapper(ros::NodeHandle& n, ros::NodeHandle& pn):
     mapFrame(getParam<string>("map_frame", "map")),
     planeOdomFrame(getParam<string>("plane_odom_frame", "plane_odom")),
     baseFootPrintFrame(getParam<string>("base_footprint_frame", "base_footprint")),
-
     vtkFinalMapName(getParam<string>("vtkFinalMapName", "finalMap.vtk")),
     priorStatic(getParam<double>("priorStatic", 0.5)),
     priorDyn(getParam<double>("priorDyn", 0.5)),
@@ -547,6 +546,13 @@ void Mapper::processCloud(unique_ptr<DP> newPointCloud, const std::string& scann
         timer timeProcess_1;
         TSensorToMap = icp(*newPointCloud, TSensorToMapReckon);
         cout<<"icp: "<<timeProcess_1.elapsed()<<endl;
+
+        // YH in 2020.11 after debug of orthogonality
+        if (!transformation->checkParameters(TSensorToMap)) {
+        std::cout << "WARNING: T does not represent a valid rigid transformation\nProjecting onto an orthogonal basis"
+                << std::endl;
+        TSensorToMap = transformation->correctParameters(TSensorToMap);
+        }
 
         ROS_DEBUG_STREAM("Ticp:\n" << TSensorToMap);
 

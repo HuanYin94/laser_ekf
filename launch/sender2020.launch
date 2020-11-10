@@ -1,0 +1,7 @@
+
+<launch>
+	
+	<node pkg="laser_ekf" type="sender2020" name="sender2020" output="screen" >
+	</node>
+
+</launch>

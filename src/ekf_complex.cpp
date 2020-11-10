@@ -159,7 +159,10 @@ void ekf::sysInit()
     /// INIT by HUMAN
 
     // yaw, rad to deg
-    float yaw = this->angleNorm(this->to_radians(init_yaw));
+    // float yaw = this->angleNorm(this->to_radians(init_yaw));
+    // first position is 
+    float yaw = this->angleNorm(init_yaw);
+
     vehicle_pose << init_x, init_y, yaw;
     this->TMapToWorld = this->Pose2DToRT3D(vehicle_pose);
 

@@ -143,7 +143,10 @@ void ekf::sysInit()
 
 //    vehicle_pose << mag_pose.point.x, mag_pose.point.y, this->angleNorm(mag_pose.point.z);
     /// INIT POSE FOR THIS TURN
-    float yaw =this->angleNorm(this->to_degrees(init_yaw));
+    
+    // USE HUDU, NOT DEGREE
+    // float yaw =this->angleNorm(this->to_degrees(init_yaw));
+    float yaw =this->angleNorm(init_yaw);
     vehicle_pose << init_x, init_y, yaw;
 
     // vis pub

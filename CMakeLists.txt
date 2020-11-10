@@ -58,3 +58,9 @@ add_executable(server2019 src/server2019.cpp)
 target_link_libraries(server2019
 ${catkin_LIBRARIES}
 )
+
+add_executable(sender2020 src/sender2020.cpp)
+target_link_libraries(sender2020
+${catkin_LIBRARIES}
+)
+
