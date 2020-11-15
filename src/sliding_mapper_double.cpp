@@ -548,11 +548,11 @@ void Mapper::processCloud(unique_ptr<DP> newPointCloud, const std::string& scann
         cout<<"icp: "<<timeProcess_1.elapsed()<<endl;
 
         // YH in 2020.11 after debug of orthogonality
-        if (!transformation->checkParameters(TSensorToMap)) {
-        std::cout << "WARNING: T does not represent a valid rigid transformation\nProjecting onto an orthogonal basis"
-                << std::endl;
-        TSensorToMap = transformation->correctParameters(TSensorToMap);
-        }
+        // if (!transformation->checkParameters(TSensorToMap)) {
+        // std::cout << "WARNING: T does not represent a valid rigid transformation\nProjecting onto an orthogonal basis"
+        //         << std::endl;
+        // TSensorToMap = transformation->correctParameters(TSensorToMap);
+        // }
 
         ROS_DEBUG_STREAM("Ticp:\n" << TSensorToMap);
 

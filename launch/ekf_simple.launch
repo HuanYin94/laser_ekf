@@ -4,8 +4,8 @@
 	
 		<param name="mag_dis_th" value="10000000"/>
 		
-		<param name="init_x" value="23.989"/>
-		<param name="init_y" value="21.950"/>
+		<param name="init_x" value="23.988"/>
+		<param name="init_y" value="21.951"/>
 		<param name="init_yaw" value="0.0015"/>
 
 	</node>
