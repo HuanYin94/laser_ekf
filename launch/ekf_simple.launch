@@ -4,9 +4,20 @@
 	
 		<param name="mag_dis_th" value="10000000"/>
 		
+		<!--11-03-15-17-->
+		<!--param name="init_x" value="45.001"/>
+		<param name="init_y" value="23.993"/>
+		<param name="init_yaw" value="-3.140"/-->
+
+		<!--11-04-11-07-->
 		<param name="init_x" value="23.988"/>
 		<param name="init_y" value="21.951"/>
 		<param name="init_yaw" value="0.0015"/>
+
+		<!--11-04-11-07-->
+		<!--param name="init_x" value="18.6895599365"/>
+		<param name="init_y" value="21.9717216492"/>
+		<param name="init_yaw" value="0.00174"/-->
 
 	</node>
 

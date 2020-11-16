@@ -127,8 +127,8 @@ ekf::ekf(ros::NodeHandle& n):
 
     vis_pub = n.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
-    /// TEMP NOTED
-//    mag_pose_sub = n.subscribe("mag_pose", 1, &ekf::gotMagPose, this);
+    //// NOTED
+    // mag_pose_sub = n.subscribe("mag_pose", 1, &ekf::gotMagPose, this);
 
     laserOdomSub = n.subscribe("laser_odom_zh", 1, &ekf::gotLaserOdom, this);
 
@@ -171,12 +171,12 @@ void ekf::sysInit()
 
     loc_init_flag = false;
 
-    ros::Duration(0.5).sleep();
+    ros::Duration(0.1).sleep();
 }
 
 void ekf::gotMagPose(const geometry_msgs::PointStamped& msgIn)
 {
-
+    /**
     if(mag_init_flag)
     {
         this->mag_pose = msgIn;
@@ -202,6 +202,15 @@ void ekf::gotMagPose(const geometry_msgs::PointStamped& msgIn)
 //            measure_flag = false;
         }
     }
+    **/
+
+    // CHEAT
+    this->mag_pose = msgIn;
+    vehicle_pose(0) = mag_pose.point.x;
+    vehicle_pose(1) = mag_pose.point.y;
+    vehicle_pose(2) = mag_pose.point.z;
+
+    this->publishTF(msgIn.header.stamp);
 }
 
 void ekf::gotLaserOdom(const nav_msgs::Odometry& odomMsgIn)

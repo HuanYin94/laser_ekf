@@ -383,7 +383,7 @@ void Mapper::gotCloud(const sensor_msgs::PointCloud2& cloudMsgIn)
         }
 
         newCloud.concatenate(*cloud);
-
+        
         unique_ptr<DP> cloud_co(new DP(newCloud));
 
         processCloud(move(cloud_co), cloudMsgIn.header.frame_id, cloudMsgIn.header.stamp, cloudMsgIn.header.seq);

@@ -11,7 +11,8 @@
 
 	<!--Calib Result-->
 	<!--On red vehicle in 2020.11-->
-	<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="-2.0 -2.2 0 0.013 0.012 -0.671 0.74 laser2 laser1 10"/>
+	<!--node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="-2.0 -2.2 0 0.013 0.012 -0.671 0.74 laser2 laser1 10"/-->
+	<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="-2.05 -2.15 0 0.013 0.012 -0.671 0.74 laser2 laser1 10"/>
 	<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="7.5012 1.4813 0.962 0 0 0.358 0.934 base_footprint laser2 10"/>	
 	
 	<!--On red vehicle in 2020.11.04-->
@@ -41,11 +42,11 @@ base_footprint laser2 50" />
 
  		<!--Lv's Sliding Map-->
 
-		<node pkg="laser_ekf" type="sliding_mapper_double" name="sliding_mapper_double" output="screen">
+		<node pkg="laser_ekf" type="sliding_mapper_double" name="sliding_mapper_double" output="screen" launch-prefix="xterm -e gdb -ex run --args ">
 		<param name="publishMapTF" value="$(arg publishMapTF)"/>
 		<param name="subscribe_scan" value="false"/>
 		<param name="subscribe_cloud" value="true"/>
-        <param name="subscribe_odom" value="false"/>
+        <param name="subscribe_odom" value="true"/>
 
 		<remap from="scan" to="/scan"/>
 		<remap from="cloud_in" to="/velodyne2/velodyne_points"/>

@@ -13,7 +13,8 @@
 #include "pointmatcher_ros/transform.h"
 #include <fstream>
 
-#define DELTA_TIME 0.02
+// #define DELTA_TIME 0.02 // 50Hz in 2019
+#define DELTA_TIME 0.005 // 200Hz in 2020.11
 
 using namespace std;
 using namespace Eigen;
