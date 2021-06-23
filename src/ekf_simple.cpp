@@ -211,6 +211,8 @@ void ekf::gotMagPose(const geometry_msgs::PointStamped& msgIn)
     vehicle_pose(2) = mag_pose.point.z;
 
     this->publishTF(msgIn.header.stamp);
+    cout<<"vehicle pose:    " <<vehicle_pose.transpose()<<endl;
+
 }
 
 void ekf::gotLaserOdom(const nav_msgs::Odometry& odomMsgIn)
